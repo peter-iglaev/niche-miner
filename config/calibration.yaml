@@ -1,0 +1,536 @@
+# Контрольная выборка для калибровки гейтов (положительный контроль).
+#
+# Здесь собраны ниши, про которые заранее известно, что это живой self-serve бизнес:
+# продукт покупают картой по подписке порядка $9–49/мес, покупатель приходит сам через поиск,
+# а не через отдел продаж, и у ниши есть несколько независимых платных игроков.
+#
+# Это не гипотезы для проверки. Это эталон для прибора: пайплайн, который отвергает
+# большинство строк этого файла, ничего не говорит про рынок — он говорит про свои пороги.
+# Ноль на выходе прогона доказателен только после того, как контроль проходит.
+#
+# Фразы имитируют то, что порождает стадия разворота: головная фраза, вопросы, модификаторы
+# (api, software, tool, free), формы инструмента и коммерческие хвосты (alternatives, pricing).
+# Запускается: python3 -B scripts/calibrate.py --run calib-<дата>
+#
+# Файл описывает две выборки. `niches` — положительный контроль, он должен проходить целиком.
+# `negative` — то, что обязано отсеиваться, и каждая строка целится в своё правило: гейт,
+# пропускающий всё, не прибор, а решето. Калибровка считает обе стороны: сколько живых ниш
+# прошло и сколько мёртвых не прошло.
+schema_version: '1.0'
+
+niches:
+  - id: uptime-monitoring
+    name: uptime monitoring
+    why: UptimeRobot, BetterStack, Pingdom, Hyperping — публичные планы $7–29/мес, регистрация картой без разговора с продавцом
+    intent: commercial
+    product_shape: tool
+    head_phrase: uptime monitoring
+    phrases:
+      - uptime monitoring
+      - uptime monitoring tool
+      - uptime monitoring service
+      - website uptime monitoring
+      - server uptime monitoring
+      - uptime monitoring software
+      - free uptime monitoring
+      - uptime monitoring api
+      - self hosted uptime monitoring
+      - open source uptime monitoring
+      - uptimerobot alternatives
+      - pingdom alternatives
+      - best uptime monitoring tools
+      - uptime monitoring pricing
+      - website downtime alerts
+      - website monitoring service
+      - http monitoring tool
+      - ssl certificate expiry monitoring
+      - uptime checker
+      - website availability monitoring
+
+  - id: cron-job-monitoring
+    name: cron job monitoring
+    why: Cronitor, Healthchecks.io, Cronhub — $5–30/мес, самообслуживание, узкая техническая задача
+    intent: tool_shaped
+    product_shape: tool
+    head_phrase: cron job monitoring
+    phrases:
+      - cron job monitoring
+      - cron monitoring
+      - cron job monitoring tool
+      - monitor cron jobs
+      - cron job failure alerts
+      - healthchecks io alternatives
+      - cronitor alternatives
+      - scheduled task monitoring
+      - cron job checker
+      - dead man's switch monitoring
+      - cron job monitoring service
+      - cron job monitoring self hosted
+      - background job monitoring
+      - cron job did not run alert
+      - heartbeat monitoring service
+      - cron expression generator
+
+  - id: screenshot-api
+    name: screenshot api
+    why: Urlbox, ScreenshotOne, ApiFlash — $9–49/мес за объём скриншотов, чистое самообслуживание
+    intent: tool_shaped
+    product_shape: tool
+    head_phrase: screenshot api
+    phrases:
+      - screenshot api
+      - website screenshot api
+      - url to image api
+      - html to image api
+      - webpage screenshot api
+      - screenshot api free
+      - take screenshot of website api
+      - screenshot as a service
+      - urlbox alternatives
+      - apiflash alternatives
+      - screenshot api pricing
+      - full page screenshot api
+      - puppeteer screenshot api
+      - website thumbnail generator api
+      - screenshot machine alternatives
+
+  - id: pdf-generation-api
+    name: pdf generation api
+    why: DocRaptor, PDFMonkey, Api2Pdf, PDFShift — подписка $19–49/мес, покупает разработчик сам
+    intent: tool_shaped
+    product_shape: tool
+    head_phrase: pdf generation api
+    phrases:
+      - pdf generation api
+      - html to pdf api
+      - pdf api
+      - generate pdf from html api
+      - invoice pdf generation api
+      - pdf generation service
+      - docraptor alternatives
+      - pdfshift alternatives
+      - html to pdf converter api
+      - pdf generation api pricing
+      - url to pdf api
+      - pdf template api
+      - wkhtmltopdf alternative
+      - generate pdf from template
+
+  - id: email-verification
+    name: email verification api
+    why: ZeroBounce, NeverBounce, Emailable — пакеты и подписки от $15, покупка картой без продавца
+    intent: commercial
+    product_shape: tool
+    head_phrase: email verification
+    phrases:
+      - email verification
+      - email verification api
+      - email verification service
+      - bulk email verification
+      - email validation api
+      - verify email address api
+      - email list cleaning service
+      - zerobounce alternatives
+      - neverbounce alternatives
+      - email verification pricing
+      - check if email is valid api
+      - disposable email checker api
+      - email verifier tool
+      - email deliverability checker
+
+  - id: form-backend
+    name: form backend
+    why: Formspree, Basin, Getform — $8–29/мес, покупатель приходит из поиска «form backend for static site»
+    intent: tool_shaped
+    product_shape: tool
+    head_phrase: form backend
+    phrases:
+      - form backend
+      - form backend service
+      - static site form handling
+      - html form without backend
+      - form submission service
+      - formspree alternatives
+      - contact form api
+      - form endpoint service
+      - netlify forms alternative
+      - form backend for static site
+      - html form to email service
+      - serverless form handler
+      - form spam protection service
+
+  - id: status-page
+    name: status page
+    why: Instatus, Statuspage, BetterStack — $10–49/мес, самостоятельная регистрация
+    intent: commercial
+    product_shape: tool
+    head_phrase: status page
+    phrases:
+      - status page
+      - status page software
+      - hosted status page
+      - status page tool
+      - statuspage alternatives
+      - instatus alternatives
+      - open source status page
+      - status page pricing
+      - incident communication tool
+      - public status page service
+      - self hosted status page
+      - status page for saas
+      - service status page generator
+
+  - id: transactional-email-api
+    name: transactional email api
+    why: Postmark, Resend, Mailgun — $15–50/мес на малых объёмах, разработчик подключает сам
+    intent: tool_shaped
+    product_shape: tool
+    head_phrase: transactional email api
+    phrases:
+      - transactional email api
+      - transactional email service
+      - email api
+      - send email api
+      - smtp api service
+      - postmark alternatives
+      - sendgrid alternatives
+      - resend alternatives
+      - transactional email pricing
+      - email api for developers
+      - email delivery service
+      - smtp relay service
+      - email api free tier
+
+  - id: appointment-scheduling
+    name: appointment scheduling software
+    why: Calendly, Acuity, Cal.com — $10–20/мес на пользователя, покупает не инженер, а владелец практики или менеджер
+    intent: commercial
+    product_shape: tool
+    head_phrase: appointment scheduling software
+    phrases:
+      - appointment scheduling software
+      - online appointment scheduling
+      - appointment booking software
+      - scheduling software for small business
+      - calendly alternatives
+      - acuity scheduling alternatives
+      - appointment scheduling app
+      - booking system for salons
+      - online booking software
+      - appointment reminder software
+      - client scheduling software
+      - meeting scheduling tool
+      - appointment scheduling pricing
+
+  - id: invoicing-software
+    name: invoicing software for freelancers
+    why: Invoice Ninja, Wave, Bonsai, FreshBooks — $9–30/мес, покупатель-фрилансер платит картой
+    intent: commercial
+    product_shape: tool
+    head_phrase: invoicing software
+    phrases:
+      - invoicing software
+      - invoicing software for freelancers
+      - invoice generator
+      - free invoice generator
+      - online invoicing software
+      - invoice software small business
+      - freshbooks alternatives
+      - wave accounting alternatives
+      - invoice template generator
+      - recurring invoice software
+      - invoicing app for contractors
+      - invoice and time tracking software
+      - send invoice online
+
+# Второе расширение выборки (22 сентября 2026). Первые десять ниш показали направление
+# ошибки, но на пороги вроде min_volume_sum десяти точек мало: он стоял на одном наблюдении.
+  - id: url-shortener-analytics
+    name: link shortener with analytics
+    why: Dub, Short.io, Rebrandly, Bitly — $9–39/мес, регистрация картой
+    intent: commercial
+    product_shape: tool
+    head_phrase: link shortener
+    phrases:
+      - link shortener
+      - url shortener
+      - custom link shortener
+      - branded link shortener
+      - link shortener with analytics
+      - bitly alternatives
+      - short io alternatives
+      - self hosted url shortener
+      - link shortener api
+      - url shortener pricing
+      - link tracking tool
+      - utm builder tool
+      - short link generator
+
+  - id: esignature
+    name: electronic signature software
+    why: SignWell, Dropbox Sign, Documenso — $10–30/мес, малый бизнес платит картой
+    intent: commercial
+    product_shape: tool
+    head_phrase: electronic signature software
+    phrases:
+      - electronic signature software
+      - esignature software
+      - online signature tool
+      - sign pdf online
+      - docusign alternatives
+      - hellosign alternatives
+      - e signature api
+      - electronic signature for small business
+      - digital signature software
+      - signature request tool
+      - esign documents online
+      - open source e signature
+
+  - id: time-tracking
+    name: time tracking software
+    why: Toggl, Clockify, Harvest — $9–20 на пользователя, самообслуживание
+    intent: commercial
+    product_shape: tool
+    head_phrase: time tracking software
+    phrases:
+      - time tracking software
+      - time tracking app
+      - employee time tracking software
+      - time tracking for freelancers
+      - toggl alternatives
+      - harvest alternatives
+      - timesheet software
+      - project time tracking
+      - billable hours tracker
+      - time tracking with invoicing
+      - free time tracking software
+      - time tracking chrome extension
+
+  - id: survey-form-builder
+    name: online survey tool
+    why: Typeform, Tally, Fillout — $25–50/мес, покупатель-маркетолог платит сам
+    intent: commercial
+    product_shape: tool
+    head_phrase: online survey tool
+    phrases:
+      - online survey tool
+      - survey software
+      - form builder
+      - online form builder
+      - typeform alternatives
+      - google forms alternative
+      - survey tool pricing
+      - conditional logic form builder
+      - nps survey tool
+      - customer feedback form tool
+      - embeddable form builder
+      - survey tool for small business
+
+  - id: background-removal-api
+    name: background removal api
+    why: remove.bg, Photoroom, Slazzer — пакеты кредитов и подписки $9–49, покупает разработчик или магазин
+    intent: tool_shaped
+    product_shape: tool
+    head_phrase: background removal api
+    phrases:
+      - background removal api
+      - remove background api
+      - image background remover api
+      - remove bg alternatives
+      - bulk background removal
+      - background removal for product photos
+      - transparent background api
+      - photoroom api
+      - background eraser api
+      - remove background from image programmatically
+
+  - id: document-ocr-api
+    name: document parsing api
+    why: Mindee, Nanonets, Veryfi — подписки от $29, разработчик подключает сам
+    intent: tool_shaped
+    product_shape: tool
+    head_phrase: document parsing api
+    phrases:
+      - document parsing api
+      - invoice ocr api
+      - receipt ocr api
+      - document data extraction api
+      - pdf data extraction api
+      - mindee alternatives
+      - nanonets alternatives
+      - ocr api pricing
+      - extract table from pdf api
+      - id document verification api
+      - bank statement parser api
+
+  - id: api-monitoring
+    name: api monitoring
+    why: Checkly, Treblle, Assertible — $20–50/мес, разработчик покупает без отдела закупок
+    intent: tool_shaped
+    product_shape: tool
+    head_phrase: api monitoring
+    phrases:
+      - api monitoring
+      - api monitoring tool
+      - api uptime monitoring
+      - synthetic monitoring tool
+      - checkly alternatives
+      - api performance monitoring
+      - rest api monitoring
+      - api monitoring service
+      - endpoint monitoring tool
+      - api testing and monitoring
+      - graphql monitoring
+
+  - id: shared-inbox
+    name: shared inbox software
+    why: Help Scout, Front, Missive — $15–25 на пользователя, покупает владелец малого бизнеса
+    intent: commercial
+    product_shape: tool
+    head_phrase: shared inbox software
+    phrases:
+      - shared inbox software
+      - shared inbox tool
+      - team inbox software
+      - shared email inbox
+      - help scout alternatives
+      - front app alternatives
+      - customer support inbox tool
+      - shared mailbox for teams
+      - email collaboration tool
+      - support ticket software small business
+      - gmail shared inbox tool
+
+# Отрицательный контроль: каждая строка обязана получить отказ, и в expect_rule написано,
+# по какому именно правилу. Отказ по другому правилу — тоже повод разобраться: значит,
+# прибор ловит верно, но не тем, чем мы думаем.
+negative:
+  - id: flash-player
+    name: adobe flash player
+    why: Технология мертва с 2020 года; спрос обязан падать быстрее фона
+    expect_rule: min_trend_yoy_vs_baseline
+    intent: commercial
+    product_shape: tool
+    head_phrase: adobe flash player
+    phrases:
+      - adobe flash player
+      - flash player download
+      - flash player alternative
+      - flash player for chrome
+      - swf player
+      - flash player enable
+      - run flash files
+      - flash player emulator
+
+  - id: windows-phone-development
+    name: windows phone app development
+    why: Платформа закрыта; и спроса нет, и падение продолжается
+    expect_rule: min_volume_sum
+    intent: commercial
+    product_shape: tool
+    head_phrase: windows phone app development
+    phrases:
+      - windows phone app development
+      - windows phone sdk
+      - windows phone emulator
+      - publish app to windows phone store
+      - windows phone xaml tutorial
+      - windows phone development tools
+
+  - id: what-is-kubernetes
+    name: what is kubernetes
+    why: Чисто определительный спрос — объём огромный, платить не за что
+    expect_rule: intent
+    intent: informational
+    product_shape: content
+    head_phrase: what is kubernetes
+    phrases:
+      - what is kubernetes
+      - kubernetes explained
+      - kubernetes vs docker
+      - how does kubernetes work
+      - kubernetes architecture
+      - kubernetes tutorial for beginners
+      - kubernetes meaning
+      - why use kubernetes
+
+  - id: erp-implementation
+    name: erp implementation services
+    why: "Внедрение за сотни тысяч с отделом продаж: ставка обязана вылететь за верх полосы self_serve"
+    expect_rule: cpc_band
+    intent: commercial
+    product_shape: tool
+    head_phrase: erp implementation services
+    phrases:
+      - erp implementation services
+      - erp implementation consultant
+      - sap implementation partner
+      - netsuite implementation partner
+      - erp implementation cost
+      - erp consulting firm
+      - oracle erp implementation
+
+  - id: free-image-resizer
+    name: free image resizer
+    why: "За клик никто не платит: ставка обязана упасть ниже нижней границы полосы"
+    expect_rule: cpc_band
+    intent: tool_shaped
+    product_shape: tool
+    head_phrase: free image resizer
+    phrases:
+      - free image resizer
+      - resize image online free
+      - image resizer online
+      - crop image online free
+      - compress image online free
+      - resize photo online
+      - image size reducer
+      - bulk image resizer free
+
+  - id: custom-software-development
+    name: custom software development company
+    why: Заказная разработка с отделом продаж — покупают человекочасы, а не продукт
+    expect_rule: services_shaped
+    intent: commercial
+    product_shape: tool
+    head_phrase: custom software development company
+    phrases:
+      - custom software development company
+      - software development agency
+      - hire software development company
+      - custom software development services
+      - offshore software development partner
+      - software outsourcing company
+      - nearshore development agency
+      - software consulting firm
+
+  - id: silverlight-plugin
+    name: microsoft silverlight plugin
+    why: Технология снята с поддержки в 2021; остаточный спрос обязан падать быстрее фона
+    expect_rule: min_trend_yoy_vs_baseline
+    intent: commercial
+    product_shape: tool
+    head_phrase: silverlight plugin
+    phrases:
+      - silverlight plugin
+      - silverlight download
+      - silverlight for chrome
+      - install silverlight
+      - silverlight alternative
+      - silverlight enable browser
+      - microsoft silverlight runtime
+
+  - id: rss-reader-for-symbian
+    name: rss reader for symbian
+    why: "Мёртвая платформа и микроспрос: объём обязан не дотянуть до порога"
+    expect_rule: min_volume_sum
+    intent: commercial
+    product_shape: tool
+    head_phrase: symbian rss reader
+    phrases:
+      - symbian rss reader
+      - rss reader for symbian
+      - symbian feed reader app
+      - nokia symbian rss
+      - symbian s60 rss reader
+      - download rss reader symbian

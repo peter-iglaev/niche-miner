@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Frozen assignment input packet v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "assignment_id",
+    "attempt",
+    "candidate_id",
+    "role",
+    "objective",
+    "scope",
+    "limits",
+    "allowed_actions",
+    "output_path",
+    "acceptance_requirements",
+    "config_hash",
+    "discoverer_id",
+    "prior_workers",
+    "packet",
+    "hypothesis",
+    "claims"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "assignment_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "role": {
+      "enum": [
+        "discovery",
+        "demand",
+        "money",
+        "competition",
+        "distribution",
+        "feasibility",
+        "skeptic",
+        "judge"
+      ]
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "scope": {
+      "enum": [
+        "targeted",
+        "mining"
+      ]
+    },
+    "limits": {
+      "type": "object"
+    },
+    "allowed_actions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    },
+    "output_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "acceptance_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    },
+    "config_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "discoverer_id": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "prior_workers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    },
+    "packet": {
+      "type": "object"
+    },
+    "hypothesis": {
+      "anyOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "stage": {
+      "enum": [
+        "light_validation",
+        "serious_validation",
+        "deep_investigation"
+      ]
+    },
+    "execution_policy": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "provider": {"type": ["string", "null"], "minLength": 1},
+        "model": {"type": ["string", "null"], "minLength": 1},
+        "reasoning_effort": {"enum": ["low", "medium", "high", null]},
+        "routing_source": {"enum": ["default", "role", "stage", "unset"]},
+        "model_class": {"type": ["string", "null"]},
+        "search_queries_max": {"type": ["integer", "null"], "minimum": 0},
+        "allowed_roles": {"type": "array", "items": {"type": "string"}},
+        "worker_strategy": {"type": ["string", "null"]},
+        "promotion": {"type": ["string", "null"]}
+      }
+    },
+    "founder_profile": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "accepted_outputs": {
+      "type": "object"
+    }
+  }
+}

@@ -1,0 +1,271 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "profile_status",
+    "confirmed_preferences",
+    "experience",
+    "capabilities",
+    "constraints",
+    "familiarity_quota"
+  ],
+  "properties": {
+    "version": {
+      "const": 2
+    },
+    "profile_status": {
+      "enum": [
+        "incomplete",
+        "complete"
+      ]
+    },
+    "confirmed_preferences": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "low_public_visibility",
+        "avoid_aggressive_outbound_as_primary_channel",
+        "source",
+        "interpretation"
+      ],
+      "properties": {
+        "low_public_visibility": {
+          "type": "boolean"
+        },
+        "avoid_aggressive_outbound_as_primary_channel": {
+          "type": "boolean"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "interpretation": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "experience": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "confirmed_industries",
+        "unfamiliar_industries",
+        "employment_background",
+        "evidence_rule"
+      ],
+      "properties": {
+        "confirmed_industries": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "unfamiliar_industries": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "employment_background": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence_rule": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "technical_skills",
+        "industry_contacts",
+        "languages"
+      ],
+      "properties": {
+        "technical_skills": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "industry_contacts": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "languages": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "language",
+              "level"
+            ],
+            "properties": {
+              "language": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "level": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          }
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "weekly_available_hours",
+        "validation_budget",
+        "build_budget",
+        "preferred_geographies",
+        "regulatory_risk_tolerance",
+        "acceptable_sales_involvement"
+      ],
+      "properties": {
+        "weekly_available_hours": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 168
+        },
+        "validation_budget": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "build_budget": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "preferred_geographies": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "regulatory_risk_tolerance": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "acceptable_sales_involvement": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "familiarity_quota": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "current_status",
+        "rule"
+      ],
+      "properties": {
+        "mode": {
+          "const": "enforce_when_known"
+        },
+        "current_status": {
+          "enum": [
+            "evaluable",
+            "partially_evaluable",
+            "not_assessed"
+          ]
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Confirmed founder profile v2"
+}

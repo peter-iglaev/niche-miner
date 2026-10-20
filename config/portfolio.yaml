@@ -1,0 +1,46 @@
+schema_version: '1.0'
+
+# Apply quotas to the unique mining corpus, including rejected hypotheses but
+# excluding records explicitly classified duplicate. These are not winner quotas.
+enforcement:
+  scope: unique_mining_corpus
+  applies_to_run_scope: mining
+  minimum_industries: 12
+  rounding_maximum: floor
+  rounding_minimum: ceil
+  overlapping_flags: count_each_independently
+  unknown_classification_policy: reject
+  unfamiliar_to_founder_policy: enforce_when_known
+
+portfolio_rules:
+  max_ai_agent_related_pct: 20
+  max_mcp_related_pct: 10
+  max_ecommerce_pct: 10
+  max_devops_cloud_pct: 20
+  min_boring_industries_pct: 40
+  min_non_technical_buyers_pct: 30
+  min_unfamiliar_to_founder_pct: 30
+
+preferred_industry_buckets:
+  - accounting_finance_ops
+  - real_estate_property_management
+  - construction_trades
+  - import_export_logistics
+  - insurance_operations
+  - legal_administration
+  - healthcare_administration
+  - recruitment_operations
+  - procurement
+  - manufacturing_distribution
+  - hospitality_operations
+  - local_service_businesses
+  - devops_cloud_security
+  - ecommerce
+  - ai_agents_mcp
+
+anti_bias_instruction: >-
+  Allocate mining effort across buyer industries before discovery. Audit unique
+  candidates using the configured percentages, counting overlapping flags independently.
+  Report downstream survival without applying quotas to finalist selection. When
+  founder familiarity is unknown, record null and report the quota as not assessed;
+  do not substitute a typical founder or silently classify unknown as false.

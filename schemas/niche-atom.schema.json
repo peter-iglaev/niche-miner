@@ -1,0 +1,248 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Niche Atom v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "run_id",
+    "discoverer_id",
+    "industry",
+    "who",
+    "buyer",
+    "trigger",
+    "pain",
+    "current_workaround",
+    "existing_spend",
+    "job_to_be_done",
+    "measurable_result",
+    "distribution_channel",
+    "frequency",
+    "research_gaps",
+    "category_flags",
+    "classification_rationale",
+    "claim_ids"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "discoverer_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "industry": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "who": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "buyer": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "trigger": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "pain": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "current_workaround": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "existing_spend": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "job_to_be_done": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "measurable_result": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "distribution_channel": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "frequency": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "research_gaps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "uniqueItems": true
+    },
+    "category_flags": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Portfolio classifications",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ai_agent_related",
+        "mcp_related",
+        "ecommerce",
+        "devops_cloud",
+        "boring_industry",
+        "non_technical_buyer",
+        "unfamiliar_to_founder"
+      ],
+      "properties": {
+        "ai_agent_related": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "mcp_related": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "ecommerce": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "devops_cloud": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "boring_industry": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "non_technical_buyer": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "unfamiliar_to_founder": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        }
+      }
+    },
+    "classification_rationale": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "claim_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "founder_familiarity": {
+      "enum": [
+        "confirmed_familiar",
+        "confirmed_unfamiliar",
+        "unknown",
+        "outside_confirmed_familiarity"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "anyOf": [
+          {
+            "properties": {
+              "existing_spend": {
+                "type": "null"
+              }
+            }
+          },
+          {
+            "properties": {
+              "distribution_channel": {
+                "type": "null"
+              }
+            }
+          },
+          {
+            "properties": {
+              "frequency": {
+                "type": "null"
+              }
+            }
+          }
+        ]
+      },
+      "then": {
+        "properties": {
+          "research_gaps": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}

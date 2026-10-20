@@ -1,0 +1,58 @@
+# Example founder profile. Copy it to config/founder-profile.yaml and describe yourself, or keep
+# your real profile in the private data repository and link it (docs/workspace.md). The real file
+# is a private path (.private-paths) and never enters the public repository. Tests use this file.
+#
+# Record only what the founder actually confirmed: nothing here may be inferred from candidate
+# attractiveness, available tools or location. Unknown values stay null.
+version: 2
+profile_status: incomplete
+confirmed_preferences:
+  low_public_visibility: true
+  avoid_aggressive_outbound_as_primary_channel: true
+  source: example_profile
+  interpretation: >-
+    Prefer acquisition that does not depend on frequent personal-brand publishing or high-volume
+    cold outreach. Targeted one-to-one buyer conversations and inbound handling are acceptable.
+    External contact still requires explicit authorization in the user request.
+experience:
+  confirmed_industries:
+    - devops
+    - saas
+  unfamiliar_industries: null
+  employment_background: >-
+    Example: several years as a software engineer; no confirmed sector-specific background
+    outside software.
+  evidence_rule: >-
+    Record experience only from founder-provided context; do not infer industry familiarity
+    or a technical background from candidate attractiveness, available tools, or location.
+capabilities:
+  technical_skills: >-
+    Example: Python, a web framework, one cloud provider, CI/CD.
+  industry_contacts: >-
+    No confirmed vertical-specific buyer network, so industry access must be evaluated
+    separately for each niche.
+  languages:
+    - language: English
+      level: professional_working
+constraints:
+  weekly_available_hours: 10
+  validation_budget: null
+  build_budget: >-
+    Low-cost validation and development on free tiers and open-source tools. No confirmed numeric
+    maximum budget.
+  preferred_geographies:
+    - global_remote_digital_markets
+  regulatory_risk_tolerance: null
+  acceptable_sales_involvement: >-
+    Willing to talk to prospects directly; does not want a business whose primary growth engine
+    is aggressive cold outreach or founder personal branding.
+familiarity_quota:
+  mode: enforce_when_known
+  current_status: partially_evaluable
+  rule: >-
+    Do not infer familiarity from candidate attractiveness, available tools, location, or an
+    assumed professional background. Treat confirmed_industries as known founder familiarity,
+    count each candidate once, and record industries outside that list as
+    outside_confirmed_familiarity rather than confirmed_unfamiliar. Because
+    unfamiliar_industries is unknown, the unfamiliar_to_founder quota remains not_assessed;
+    report all four states and never claim quota compliance.

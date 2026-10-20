@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Model routing",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "roles"],
+  "$defs": {
+    "choice": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": {"type": ["string", "null"], "minLength": 1},
+        "model": {"type": ["string", "null"], "minLength": 1},
+        "reasoning_effort": {"enum": ["low", "medium", "high", null]}
+      }
+    },
+    "role_choices": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "discovery": {"$ref": "#/$defs/choice"},
+        "demand": {"$ref": "#/$defs/choice"},
+        "money": {"$ref": "#/$defs/choice"},
+        "competition": {"$ref": "#/$defs/choice"},
+        "distribution": {"$ref": "#/$defs/choice"},
+        "feasibility": {"$ref": "#/$defs/choice"},
+        "skeptic": {"$ref": "#/$defs/choice"},
+        "judge": {"$ref": "#/$defs/choice"}
+      }
+    }
+  },
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "providers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "label": {"type": "string"},
+          "base_url": {"type": "string", "minLength": 1},
+          "api_key_env": {"type": "string", "minLength": 1},
+          "api": {"enum": ["openai-completions", "openai-responses", "anthropic-messages"]},
+          "send_reasoning_effort": {"type": "boolean"},
+          "models": {"type": "array", "items": {"type": "string", "minLength": 1}}
+        }
+      }
+    },
+    "default": {"$ref": "#/$defs/choice"},
+    "roles": {"$ref": "#/$defs/role_choices"},
+    "stages": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "light_validation": {"$ref": "#/$defs/role_choices"},
+        "serious_validation": {"$ref": "#/$defs/role_choices"},
+        "deep_investigation": {"$ref": "#/$defs/role_choices"}
+      }
+    }
+  }
+}

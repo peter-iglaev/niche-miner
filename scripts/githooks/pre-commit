@@ -1,0 +1,4 @@
+#!/bin/sh
+# Refuse a commit that carries private paths into a public repository, a secret, or an owner
+# identifier from .privacy-denylist. Enable with: git config core.hooksPath scripts/githooks
+exec python3 -B "$(git rev-parse --show-toplevel)/scripts/workspace.py" check --staged --quiet

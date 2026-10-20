@@ -1,0 +1,432 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Codex research run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "objective",
+    "scope",
+    "stopping_conditions",
+    "brief",
+    "capabilities",
+    "phase",
+    "status",
+    "revision",
+    "config_path",
+    "config_hash",
+    "assignments",
+    "decisions",
+    "candidate_hashes",
+    "claims_hash",
+    "quota_override",
+    "report_path",
+    "report_hash"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "scope": {
+      "enum": [
+        "targeted",
+        "mining"
+      ]
+    },
+    "stopping_conditions": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "brief": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recorded_at",
+        "tools",
+        "note"
+      ],
+      "properties": {
+        "recorded_at": {
+          "type": "string",
+          "minLength": 1
+        },
+        "tools": {
+          "anyOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
+    "phase": {
+      "enum": [
+        "discovery",
+        "evidence",
+        "review",
+        "decision",
+        "complete"
+      ]
+    },
+    "status": {
+      "enum": [
+        "running",
+        "complete"
+      ]
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "config_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "config_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "assignments": {
+      "type": "array",
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Codex assignment",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "candidate_id",
+          "role",
+          "current_attempt",
+          "attempts"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "candidate_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "role": {
+            "enum": [
+              "discovery",
+              "demand",
+              "money",
+              "competition",
+              "distribution",
+              "feasibility",
+              "skeptic",
+              "judge"
+            ]
+          },
+          "current_attempt": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "attempts": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "Attempt",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "number",
+                "status",
+                "worker_id",
+                "reused_context",
+                "input_path",
+                "input_hash",
+                "result_path",
+                "result_hash",
+                "delivery",
+                "error"
+              ],
+              "properties": {
+                "number": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "status": {
+                  "enum": [
+                    "prepared",
+                    "bound",
+                    "accepted",
+                    "rejected",
+                    "superseded",
+                    "cancelled"
+                  ]
+                },
+                "worker_id": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "\\S"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "reused_context": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "provider": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "minLength": 1
+                },
+                "model": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "minLength": 1
+                },
+                "input_path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "\\S"
+                },
+                "input_hash": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "result_path": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "\\S"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "result_hash": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "delivery": {
+                  "enum": [
+                    null,
+                    "direct",
+                    "relayed"
+                  ]
+                },
+                "error": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "minLength": 1,
+                      "pattern": "\\S"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "failure_kind": {
+                  "enum": [
+                    null,
+                    "execution",
+                    "validation",
+                    "research",
+                    "user"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Candidate decision",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id",
+          "status",
+          "reason",
+          "claim_ids",
+          "author_id",
+          "duplicate_of"
+        ],
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "status": {
+            "enum": [
+              "rejected",
+              "deferred",
+              "duplicate",
+              "qualified"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "claim_ids": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          },
+          "author_id": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "duplicate_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "candidate_hashes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "claims_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "quota_override": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "reason",
+            "author_id",
+            "at"
+          ],
+          "properties": {
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "author_id": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "at": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "report_path": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "report_hash": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "report_pdf_path": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "report_pdf_hash": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

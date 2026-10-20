@@ -1,0 +1,26 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.DS_Store
+.env
+.env.local
+.env.*
+!.env.example
+runs/.lock
+runs/*/.lock
+runs/*/*.lock
+runs/.provider-rate-limits/
+
+# Owner data (.private-paths): lives in the private data repository, see docs/workspace.md
+/config/founder-profile.yaml
+/runs
+/backlog
+/reports
+/tasks/standing-objective.md
+/tasks/*-20[0-9][0-9]-*
+/docs/journal.md
+/docs/demand-dashboard.html
+/docs/pipeline-map.html
+/docs/snapshots
+/.privacy-denylist

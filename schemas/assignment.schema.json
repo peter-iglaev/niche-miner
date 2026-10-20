@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Codex assignment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "candidate_id",
+    "role",
+    "current_attempt",
+    "attempts"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "role": {
+      "enum": [
+        "discovery",
+        "demand",
+        "money",
+        "competition",
+        "distribution",
+        "feasibility",
+        "skeptic",
+        "judge"
+      ]
+    },
+    "current_attempt": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "attempts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Attempt",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "number",
+          "status",
+          "worker_id",
+          "reused_context",
+          "input_path",
+          "input_hash",
+          "result_path",
+          "result_hash",
+          "error"
+        ],
+        "properties": {
+          "number": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "enum": [
+              "prepared",
+              "bound",
+              "accepted",
+              "rejected",
+              "superseded",
+              "cancelled"
+            ]
+          },
+          "worker_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reused_context": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "input_path": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "input_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "result_path": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "result_hash": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

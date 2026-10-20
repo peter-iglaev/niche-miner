@@ -1,0 +1,23 @@
+# Paths that hold the owner's data, never the application.
+#
+# In the public code repository these paths are gitignored and, when a private data repository is
+# configured (NICHE_MINER_DATA), symlinked from it by `python3 scripts/workspace.py link`.
+# `python3 scripts/workspace.py export` leaves them out of the public snapshot, and
+# `python3 scripts/workspace.py check` refuses a commit that carries them into a public repository.
+#
+# One path per line, relative to the repository root. A trailing slash marks a directory: link
+# creates it in the data repository when it is missing, so new runs land there from the start.
+# A line without the slash is a file: link skips it until the data repository has it.
+# Shell-style wildcards (*, ?, [0-9]) match files, as in .gitignore.
+
+config/founder-profile.yaml
+runs/
+backlog/
+reports/
+tasks/standing-objective.md
+tasks/*-20[0-9][0-9]-*
+docs/journal.md
+docs/demand-dashboard.html
+docs/pipeline-map.html
+docs/snapshots/
+.privacy-denylist

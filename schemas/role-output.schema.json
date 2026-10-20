@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Independent role output v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "candidate_id",
+    "role",
+    "worker_id",
+    "discoverer_id",
+    "input_hash",
+    "claim_ids",
+    "findings",
+    "counterevidence",
+    "research_gaps",
+    "completed"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "candidate_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "role": {
+      "enum": [
+        "demand",
+        "money",
+        "competition",
+        "distribution",
+        "feasibility",
+        "skeptic",
+        "judge"
+      ]
+    },
+    "worker_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "discoverer_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "input_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "claim_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "uniqueItems": true
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "uniqueItems": true
+    },
+    "counterevidence": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "uniqueItems": true
+    },
+    "research_gaps": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "uniqueItems": true
+    },
+    "completed": {
+      "type": "boolean"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "completed": {
+            "const": true
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "findings": {
+            "minItems": 1
+          },
+          "counterevidence": {
+            "minItems": 1
+          }
+        }
+      }
+    }
+  ]
+}

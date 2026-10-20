@@ -1,0 +1,46 @@
+# Маршрутизация моделей по ролям агентов. null = выбор во время запуска.
+# Изменить: python3 scripts/routing.py set --role <role> --provider <p> --model <m> [--reasoning-effort low|medium|high] [--stage <stage>]
+schema_version: '1.0'
+providers:
+- id: deepseek
+  label: DeepSeek
+  base_url: https://api.deepseek.com
+  api_key_env: DEEPSEEK_API_KEY
+  api: openai-completions
+  send_reasoning_effort: false
+  models: [deepseek-chat, deepseek-reasoner]
+- id: glm
+  label: GLM
+  base_url: https://api.z.ai/api/paas/v4
+  api_key_env: ZAI_API_KEY
+  api: openai-completions
+  send_reasoning_effort: false
+  models: []
+- id: openai
+  label: OpenAI
+  base_url: https://api.openai.com/v1
+  api_key_env: OPENAI_API_KEY
+  api: openai-completions
+  send_reasoning_effort: true
+  models: []
+- id: anthropic
+  label: Anthropic
+  base_url: https://api.anthropic.com/v1
+  api_key_env: ANTHROPIC_API_KEY
+  api: anthropic-messages
+  send_reasoning_effort: false
+  models: []
+default: {provider: null, model: null, reasoning_effort: null}
+roles:
+  discovery: {provider: deepseek, model: deepseek-flash, reasoning_effort: low}
+  demand: {provider: deepseek, model: deepseek-chat, reasoning_effort: medium}
+  money: {provider: deepseek, model: deepseek-chat, reasoning_effort: medium}
+  competition: {provider: deepseek, model: deepseek-chat, reasoning_effort: medium}
+  distribution: {provider: deepseek, model: deepseek-chat, reasoning_effort: medium}
+  feasibility: {provider: deepseek, model: deepseek-chat, reasoning_effort: medium}
+  skeptic: {provider: deepseek, model: deepseek-v4-pro, reasoning_effort: high}
+  judge: {provider: deepseek, model: deepseek-v4-pro, reasoning_effort: high}
+stages:
+  deep_investigation:
+    skeptic: {reasoning_effort: high}
+    judge: {reasoning_effort: high}

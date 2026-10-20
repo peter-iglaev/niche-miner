@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Traceable evidence claim v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "candidate_id",
+    "claim",
+    "source_url",
+    "source_type",
+    "access_date",
+    "source_excerpt",
+    "locator",
+    "quality",
+    "relationship",
+    "independence_group",
+    "notes",
+    "author_id"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "claim": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "source_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https?://[^/\\s]+"
+    },
+    "source_type": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "access_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "source_excerpt": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "locator": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "quality": {
+      "enum": [
+        "A",
+        "B",
+        "C",
+        "D"
+      ]
+    },
+    "relationship": {
+      "enum": [
+        "supports",
+        "contradicts",
+        "qualifies"
+      ]
+    },
+    "independence_group": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "author_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "payment_scope": {
+      "enum": [
+        "none",
+        "adjacent",
+        "exact"
+      ]
+    },
+    "paid_use_explicit": {
+      "type": "boolean"
+    },
+    "buyer_group": {
+      "anyOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "metrics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "value",
+          "unit",
+          "scope",
+          "period",
+          "method",
+          "provider",
+          "collection_status",
+          "raw_response_ref"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "scope": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "period": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "method": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "provider": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "collection_status": {
+            "enum": [
+              "collected",
+              "not_collected",
+              "no_data"
+            ]
+          },
+          "raw_response_ref": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "collection_status": {
+                  "const": "collected"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "value": {
+                  "type": "number"
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "value": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "spend_signal": {
+      "enum": [
+        "public_pricing",
+        "buyer_report",
+        "practitioner_report",
+        "labor_spend",
+        "outsourcing_spend",
+        "paid_competitor",
+        "recurring_workflow",
+        "transaction_record"
+      ]
+    },
+    "commercial_terms_explicit": {
+      "type": "boolean"
+    },
+    "source_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    }
+  }
+}

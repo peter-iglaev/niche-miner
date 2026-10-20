@@ -1,0 +1,339 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Independent commercial assessment v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "candidate_id",
+    "author_id",
+    "discoverer_id",
+    "decision_context",
+    "payment",
+    "distribution",
+    "feasibility",
+    "ratings",
+    "critical_unknowns",
+    "unresolved_fatal_contradictions"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "2.0"
+    },
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "author_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "discoverer_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "decision_context": {
+      "enum": [
+        "investigate",
+        "commercial_validation"
+      ],
+      "description": "investigate allocates research attention with incomplete commercial evidence; commercial_validation applies every commercial gate. Both decisions are emitted separately in score.json."
+    },
+    "payment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "level",
+        "claim_ids",
+        "rationale"
+      ],
+      "properties": {
+        "level": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 5
+        },
+        "claim_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "description": "Existing-spend confidence (ordinal 0\u20135); distinct from concrete transaction evidence strength, derived in score.json. Independent convergent signals can establish levels 3\u20134 without an invoice."
+    },
+    "distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "claim_ids",
+        "rationale"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "unknown"
+          ]
+        },
+        "claim_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "feasibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "claim_ids",
+        "rationale"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "unknown"
+          ]
+        },
+        "claim_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "ratings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "impact_per_event",
+        "recurring_burden",
+        "monetization_economics",
+        "accessible_distribution",
+        "switching_opportunity"
+      ],
+      "properties": {
+        "impact_per_event": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "claim_ids",
+            "rationale"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 4
+            },
+            "claim_ids": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
+        },
+        "recurring_burden": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "claim_ids",
+            "rationale"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 4
+            },
+            "claim_ids": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
+        },
+        "monetization_economics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "claim_ids",
+            "rationale"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 4
+            },
+            "claim_ids": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
+        },
+        "accessible_distribution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "claim_ids",
+            "rationale"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 4
+            },
+            "claim_ids": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
+        },
+        "switching_opportunity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "claim_ids",
+            "rationale"
+          ],
+          "properties": {
+            "value": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 4
+            },
+            "claim_ids": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            },
+            "rationale": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
+        }
+      }
+    },
+    "critical_unknowns": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    },
+    "unresolved_fatal_contradictions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      }
+    }
+  }
+}

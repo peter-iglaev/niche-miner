@@ -1,0 +1,245 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Agent result envelope",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "assignment_id",
+    "attempt",
+    "role",
+    "worker_id",
+    "input_hash",
+    "claims",
+    "search_log"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "assignment_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "role": {
+      "enum": [
+        "discovery",
+        "demand",
+        "money",
+        "competition",
+        "distribution",
+        "feasibility",
+        "skeptic",
+        "judge"
+      ]
+    },
+    "worker_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "input_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "search_log": {
+      "type": "array",
+      "items": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Search log entry",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "query",
+          "provider",
+          "access_date",
+          "status",
+          "raw_response_ref",
+          "notes"
+        ],
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "provider": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "access_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "enum": [
+              "results",
+              "no_data",
+              "failed",
+              "not_collected"
+            ]
+          },
+          "raw_response_ref": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "notes": {
+            "type": "string"
+          },
+          "source_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "logical_query_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "attempt_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "failure_kind": {
+            "enum": [
+              null,
+              "rate_limit",
+              "transport",
+              "http",
+              "parse",
+              "capability_unavailable"
+            ]
+          },
+          "country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "search_lang": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "freshness": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "geography": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "language": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "period": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "candidate": {
+      "type": "object"
+    },
+    "role_output": {
+      "type": "object"
+    },
+    "assessment": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "role": {
+            "const": "discovery"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "candidate"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "role_output"
+              ]
+            },
+            {
+              "required": [
+                "assessment"
+              ]
+            }
+          ]
+        }
+      },
+      "else": {
+        "required": [
+          "role_output"
+        ],
+        "not": {
+          "required": [
+            "candidate"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "role": {
+            "const": "judge"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "assessment"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "assessment"
+          ]
+        }
+      }
+    }
+  ]
+}

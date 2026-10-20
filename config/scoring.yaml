@@ -1,0 +1,111 @@
+version: '3.0'
+policy_status: provisional_decision_policy
+score_scale: {min: 0, max: 4}
+hard_gates:
+  investigate_minimum_payment: 0
+  commercial_validation_minimum_payment: 4
+  distribution_pass_minimum_rating: 3
+indices:
+  problem: {impact_per_event: 60, recurring_burden: 40}
+  business: {monetization_economics: 40, accessible_distribution: 35, switching_opportunity: 25}
+payment_evidence_levels:
+  0: Scoped investigation found no payment support; this does not prove nobody pays.
+  1: Problem discussion without demonstrated commercial behavior.
+  2: Workaround, active search, or priced offer without credible paid use.
+  3: Meaningful adjacent/exact existing spend from paid use OR three independent origins supporting buyer/practitioner reports, observed labor/outsourcing spend, and a priced offer/paid competitor.
+  4: Exact-job paid use OR level 3 convergence entirely matching the exact job, with recurrence and two buyer groups; A/B support required.
+  5: Two independent exact paid buyers and source origins, each with attributable commercial terms. Invoice/contract is optional; it strengthens transaction evidence.
+anchors:
+  impact_per_event:
+    0: Adequate workaround; no evidenced material consequence.
+    1: Evidenced minor inconvenience.
+    2: Material time or cost consequence for a specified operator.
+    3: Documented budget-owner consequence.
+    4: Documented severe financial or operational consequence with attributable scope.
+  recurring_burden:
+    0: One-off or resolved need.
+    1: Infrequent trigger with weak repeat value.
+    2: Evidenced periodic trigger.
+    3: Repeated burden within the buyer's operating cycle.
+    4: Persistent burden with documented workload or deadline pressure.
+  monetization_economics:
+    0: Evidence of unsustainable economics.
+    1: Evidenced budget-cost mismatch.
+    2: Plausible overlap of budget and cost ranges; material gaps remain.
+    3: Supported budget and cost ranges leave headroom.
+    4: Observed transaction, delivery, and acquisition results support sustainable contribution.
+  accessible_distribution:
+    0: Confirmed blocked or incompatible access.
+    1: Named channel only.
+    2: Matching buyers observed; access unverified.
+    3: Accessible mechanism evidenced; conversion untested.
+    4: Relevant qualified acquisition test observed.
+  switching_opportunity:
+    0: Adequate incumbent or free option with no supported switching reason.
+    1: General dissatisfaction only.
+    2: Specific unmet need; switching conditions unresolved.
+    3: Target-segment gap and credible migration or purchase path.
+    4: Observed switching or commitment for the stated advantage.
+rules:
+  - Levels and indices are ordinal provisional policies, not probabilities or calibrated predictions.
+  - Missing observations remain null with a rationale; they never become zero.
+  - Payment, access, feasibility, and fatal contradiction gates cannot be offset by indices.
+  - Commercial qualification requires distribution to pass; unknown distribution or feasibility does not block Investigation Priority.
+  - A passing distribution gate cannot coexist with a known access rating below its configured threshold.
+  - Commercial validation requires feasibility to pass; investigation allocates research attention and permits incomplete payment, distribution and feasibility evidence.
+  - Keep founder fit separate; do not combine the problem and business indices.
+  - Unknown ratings leave their index null; such commercial validation decisions are unranked.
+  - Listed prices alone do not prove paid use; semantic source support requires independent review.
+  - Annual severe workflows can qualify; monthly use is not a universal requirement.
+  - >-
+    A published price or spend signal combined with dissatisfaction is a switching signal, not
+    stronger payment proof: it is rated under switching_opportunity and never raises the payment
+    evidence level. That value is reported as switching_signal_rating.
+  - >-
+    The weighted ranking is computed only for candidates that already passed every hard gate; a
+    high weighted score never compensates a failed gate, an unknown mandatory gate, or an
+    unresolved fatal contradiction.
+  - >-
+    Founder fit is never part of the weighted ranking. It is reported separately so an unfamiliar
+    market can still rank first.
+
+ranking:
+  status: provisional_ranking_policy
+  applies_to: eligible_candidates_only
+  founder_fit_included: false
+  scale_max: 70
+  weights:
+    payment_evidence: 35
+    pain_severity: 15
+    frequency: 10
+    distribution: 10
+  components:
+    payment_evidence: {source: payment_level, max: 5}
+    pain_severity: {rating: impact_per_event}
+    frequency: {rating: recurring_burden}
+    distribution: {rating: accessible_distribution}
+  unweighted_gaps:
+    competition_weakness: 10
+    mvp_simplicity: 8
+    market_direction: 5
+    founder_fit: 7
+  rationale: >-
+    Weights follow the founder research document with two deliberate changes. Existing spend is
+    merged into payment evidence because both describe the same paid-use observation, so the two
+    document weights 25 and 10 become 35. Founder fit is excluded, so an unfamiliar market is not
+    penalised for being unfamiliar. Factors without an anchored rating in the current assessment
+    contract stay unweighted and are reported as gaps; the comparable scale therefore totals 70
+    rather than 100. Each weighted component is normalised to 0-100 and the result is an ordinal
+    prioritisation aid, not a probability or a calibrated prediction.
+
+# Transaction evidence strength is emitted separately in score.json:
+# 0 no attributable paid-use observation (convergent spend may still be strong),
+# 1 one attributable paid-use report, 2 independent paid-use reports,
+# 3 direct transaction record with attributable terms. This is directness, not probability.
+# Investigation Priority is a separate ordinal research allocation, never a blended
+# commercial ranking. high = meaningful spend + recurring material pain;
+# medium = meaningful spend needing a pain check, or recurring material pain with offers;
+# low = limited spend support; unknown = unassessed payment; blocked = known failed gate/fatal.
+# Cheap triage from claims uses high for strong exact spend + observed recurrence,
+# medium for meaningful spend or recurring priced workflow, and review_required for
+# counterevidence. Missing gates stay visible. No Judge or per-facet agent is needed.

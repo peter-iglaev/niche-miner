@@ -1,0 +1,135 @@
+version: 2
+policy_scope: reusable_research_application
+language:
+  user_communication: ru
+  final_reports: ru
+  internal_artifacts: en_or_ru
+assignment_defaults:
+  search_queries_max: 4
+  gap_passes_max: 1
+  time_limit_seconds: null
+  rationale: >-
+    Optional defaults for an individual assignment, not required corpus sizes.
+    A search is one semantic query, including all provider fallback attempts; opening returned sources
+    does not count as another query. Log unsuccessful queries and access limits.
+    Exhausting a limit produces an explicit gap or deferral, never fabricated evidence.
+run_overrides:
+  source: run_spec
+  explicit_run_values_override_assignment_defaults: true
+  effective_limits_recorded_in_each_assignment: true
+  candidate_counts_and_role_selection: specified_by_user_task
+  missing_limit: record_unknown_do_not_invent
+  no_minimum_number_of_positive_results: true
+scope:
+  values: [targeted, mining]
+  selection: explicit_required_flag
+  targeted_means: investigate_existing_hypothesis_or_refresh_evidence
+  mining_means: broad_search_across_buyer_industries
+  mining_enforces_portfolio_quotas: true
+  targeted_portfolio_quotas: not_assessed
+  quota_override: allowed_only_as_recorded_manifest_decision_with_reason
+funnel:
+  mode: budgeted_funnel
+  first_run: {hypotheses: 40, light_validation: 12, serious_validation: 5, finalists: 3}
+  target_scale: {hypotheses: 300, light_validation: 60, serious_validation: 15, finalists: 5}
+  stages:
+    light_validation:
+      allowed_roles: [discovery]
+      search_queries_max: 2
+      worker_strategy: one_worker_collects_workflow_spend_recurrence_signals
+      model_class: economy
+      provider: null
+      model: null
+      promotion: investigation_priority_from_accepted_claims
+    serious_validation:
+      allowed_roles: [money, demand, competition, distribution, feasibility]
+      search_queries_max: 4
+      worker_strategy: reuse_one_eligible_worker_across_needed_facets
+      model_class: balanced
+      provider: null
+      model: null
+      promotion: strongest_existing_spend_and_decisive_resolvable_gaps
+    deep_investigation:
+      allowed_roles: [money, demand, competition, distribution, feasibility, skeptic, judge]
+      search_queries_max: 8
+      worker_strategy: independent_discovery_research_skeptic_judge_authors
+      model_class: reasoning
+      provider: null
+      model: null
+      promotion: strict_commercial_qualification
+  staging_path: runs/<run-id>/hypotheses.jsonl
+  staging_rules: >-
+    Cheap hypotheses are staged before the control plane: no claims, no acceptance and no candidate
+    artifacts. scripts/hypotheses.py validates the canonical atom, rejects duplicate buying contexts
+    and reports portfolio coverage. Only candidates promoted from the staging file become
+    assignments with a frozen input, an actual worker id and an accepted result. Stage counts are
+    run budgets, never required corpus sizes, and a small stage is reported as a gap rather than
+    filled with weak candidates.
+
+gates:
+  scoring_policy: config/scoring.yaml
+  numerical_thresholds_defined_only_in_scoring_policy: true
+  unknown_evidence: defer_without_negative_inference
+  zero_qualified_recommendations_allowed: true
+independence:
+  research_roles: [discovery, demand, money, competition, distribution, feasibility]
+  review_roles: [skeptic, judge]
+  qualification_required_roles: [discovery, money, distribution, feasibility, skeptic, judge]
+  optional_facets: [demand, competition]
+  orchestrator_is_root_not_a_research_role: true
+  skeptic_audits_facets: [demand, money, competition, distribution, feasibility]
+  discovery_author_may_validate_own_candidate: false
+  discovery_author_may_judge_own_candidate: false
+  multiple_roles_per_worker_allowed: true
+  judge_must_differ_from_candidate_research_workers: true
+  initial_role_assessments_frozen_before_reconciliation: true
+  shared_model_runs_are_statistically_independent: false
+execution:
+  require_real_subagents: true
+  capacity: discover_from_current_codex_session
+  unavailable_subagents: report_blocked_do_not_substitute_single_agent_execution
+  worker_ids: record_actual_assignment_lineage
+  worker_count_and_model: selected_for_the_current_task
+  context_reuse: allowed_only_when_candidate_independence_is_preserved
+  cross_assign_by_discoverer_id: true
+  separate_role_artifacts_required: true
+  skeptic_separation: mandatory_independent_worker_with_fresh_context
+  judge_context: fresh
+  completion_health: >-
+    A queued assignment that ends rejected or cancelled is an execution blocker. It cannot be
+    converted into a successful completed run by writing a deferred candidate decision. Provider
+    transport/rate/HTTP/parse failures are reported separately from a successful no_data result.
+    Infrastructure retries do not consume the research-attempt budget.
+provenance:
+  required: [worker_id, discoverer_id, input_hash]
+  immutable_attempts: true
+  canonical_merge_owner: designated_single_writer_in_run_manifest
+  manifest: runs/<run-id>/manifest.json
+  attempts: runs/<run-id>/work/<work-id>/attempt-<n>/result.json
+  artifact_paths: resolved_from_run_manifest
+evidence:
+  claim_level_citations_required: true
+  quantitative_scope_units_period_required: true
+  preserve_counterevidence: true
+  source_family_deduplication_required: true
+  missing_numeric_values: null
+  planning_estimates_must_be_labeled: true
+  public_price_is_payment_proof: false
+  active_usage_is_necessarily_paid: false
+  exact_job_spend_proves_budget_transfer: false
+keyword_tools:
+  availability: inspect_current_session_and_record_in_run_capability_snapshot
+  provider_names: preserve_actual_provider_identity
+  missing_results: preserve_no_data_or_not_collected_status
+  provider_inputs: satisfy_current_tool_requirements_without_inventing_user_input
+portfolio:
+  evaluation_basis: distinct_canonical_discovery_candidates
+  buyer_industry_separate_from_solution_technology: true
+  familiarity_quota: enforce_when_known
+  report_unknown_familiarity: true
+  force_recommendation_diversity_quotas: false
+external_actions:
+  execution_scope: current_user_task_and_persisting_authorizations
+  research_requires_a_research_task: true
+  contact_buyers_or_send_messages: requires_explicit_authorization
+  purchases_and_campaign_launches: requires_explicit_authorization
