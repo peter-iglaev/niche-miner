@@ -1,5 +1,5 @@
-# Маршрутизация моделей по ролям агентов. null = выбор во время запуска.
-# Изменить: python3 scripts/routing.py set --role <role> --provider <p> --model <m> [--reasoning-effort low|medium|high] [--stage <stage>]
+# Model routing per agent role. null = chosen at run time.
+# To change: python3 scripts/routing.py set --role <role> --provider <p> --model <m> [--reasoning-effort low|medium|high] [--stage <stage>]
 schema_version: '1.0'
 providers:
 - id: deepseek

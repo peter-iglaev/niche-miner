@@ -1,42 +1,42 @@
-# Пайплайн v2 «от спроса». Один файл — все настройки. Читается всеми стадиями и замораживается
-# в runs/<id>/config.json при создании прогона. Подробности: docs/demand-first-spec.md.
+# Demand-first pipeline v2. One file — all settings. Read by every stage and frozen
+# into runs/<id>/config.json when the run is created. Details: docs/demand-first-spec.md.
 schema_version: '2.0'
 
-# Бизнес-модель. Меняет диапазон CPC и набор обязательных гейтов.
-#   self_serve — инструмент за $9–49/мес, покупатель приходит сам через поиск или маркетплейс
-#   services   — услуга или дорогой продукт, нужны разговоры с покупателем
-#   any        — разведка, гейты только информационные
+# Business model. Changes the CPC range and the set of mandatory gates.
+#   self_serve — a tool at $9–49/mo, the buyer arrives on their own via search or a marketplace
+#   services   — a service or an expensive product, buyer conversations required
+#   any        — exploration, gates are informational only
 mode: self_serve
 
-# Диапазоны CPC в USD по режимам: медиана по кластеру от середины ставок top-of-page.
-# self_serve откалиброван на положительном контроле (scripts/calibrate.py): десять заведомо
-# живых ниш дают 5.5–36.5, поэтому верхняя граница 40, а не 12. Границу 12 пайплайн держал
-# при ставке, взятой по 80-му перцентилю, и отбраковывал ею девять живых ниш из десяти.
-# services контролем не проверен: там пороги пока на глаз.
+# CPC ranges in USD per mode: the cluster median of the middle of top-of-page bids.
+# self_serve is calibrated on the positive control (scripts/calibrate.py): ten demonstrably
+# live niches give 5.5–36.5, hence the upper bound 40, not 12. The pipeline held the
+# boundary of 12 when the bid was taken at the 80th percentile, and it rejected nine live niches out of ten.
+# services is not validated by the control: its thresholds are still by eye.
 cpc:
   self_serve: [2, 40]
   services: [12, 60]
 
-# Темы исследования. Каждый прогон берёт одну или несколько тем (--themes a,b).
-# seeds — стартовые фразы; platforms — для пар «из A в B»; verticals — для «for X».
+# Research themes. Each run takes one or more themes (--themes a,b).
+# seeds — starting phrases; platforms — for "from A to B" pairs; verticals — for "for X".
 themes:
   - id: devops-platform
-    title: DevOps и платформенная инженерия
+    title: DevOps and platform engineering
     seeds: [terraform drift, kubernetes upgrade, argocd, github actions migration, on-call runbook,
             ci pipeline flaky tests, helm chart, cloud cost]
     platforms: [jenkins, github actions, gitlab ci, circleci, argocd, flux, terraform, pulumi]
     verticals: [fintech, ecommerce, saas, healthcare]
   - id: ecommerce-tech
-    title: Технологии ecommerce
+    title: Ecommerce technology
     seeds: [shopify migration, product feed, pim, checkout performance, shopify app,
             woocommerce speed, inventory sync]
     platforms: [shopify, woocommerce, magento, bigcommerce, prestashop, wix, squarespace, etsy]
     verticals: [fashion, furniture, b2b wholesale, dropshipping]
   - id: creator-marketing
-    title: Инструменты для авторов и маркетинга
-    # Покупатель здесь не инженер: автор рассылки, маркетолог, владелец небольшого агентства.
-    # Он платит картой за подписку и не просит бюджет у платформенной команды — то есть
-    # денежный след ищется там, где он вообще бывает.
+    title: Creator and marketing tools
+    # The buyer here is not an engineer: a newsletter author, a marketer, a small agency owner.
+    # They pay by card for a subscription and do not ask a platform team for budget — that is,
+    # the money trail is looked for where it actually exists.
     seeds: [newsletter growth, seo audit, rank tracking, social media scheduling, link in bio,
             podcast transcript, affiliate tracking, landing page builder, brand mentions,
             content repurposing, youtube thumbnail, email deliverability, ugc ads, media kit]
@@ -45,24 +45,24 @@ themes:
     verticals: [coaches, agencies, newsletters, podcasters, ecommerce brands, local business]
 
   - id: ai-agents-mcp
-    title: AI-агенты и MCP
+    title: AI agents and MCP
     seeds: [mcp server, llm evaluation, prompt regression, agent tracing, token cost,
             rag pipeline, ai agent monitoring]
     platforms: [openai, anthropic, langchain, litellm, ollama, n8n]
     verticals: [customer support, legal, sales, recruiting]
 
   - id: x402-payments
-    title: x402 и оплата API агентами
-    # HTTP 402 Payment Required как протокол микроплатежей (Coinbase x402): API и MCP-серверы,
-    # которые берут оплату за запрос в стейблкоинах, и агенты, которые платят сами.
+    title: x402 and API payments by agents
+    # HTTP 402 Payment Required as a micropayment protocol (Coinbase x402): APIs and MCP servers
+    # that charge per request in stablecoins, and agents that pay by themselves.
     seeds: [x402, x402 payment, x402 facilitator, http 402 payment required, pay per request api,
             ai agent payments, usdc micropayments, monetize api, paywall api, mcp server monetization]
     platforms: [coinbase, stripe, cloudflare, base, solana, vercel]
     verticals: [api providers, data providers, mcp servers, ai agents]
 
-# Стадия 1 — разворот. Бесплатные autocomplete-источники, модификаторы и операторы порождения ниш.
+# Stage 1 — expand. Free autocomplete sources, modifiers, and niche generation operators.
 expand:
-  sources: [google, youtube, amazon, shopify, ubersuggest_suggestions]   # ubersuggest_* идёт через MCP-мост
+  sources: [google, youtube, amazon, shopify, ubersuggest_suggestions]   # ubersuggest_* goes through the MCP bridge
   modifiers: [free, api, tool, software, saas, open source, self hosted, template, checker, calculator]
   operators: [pairs, alternatives, tool_shaped]
   tool_shapes: [calculator, checker, validator, generator, converter, template, audit, linter, monitor]
@@ -71,77 +71,77 @@ expand:
   country: us
   language: en
 
-# Стадия 2 — кластеры. DeepSeek группирует фразы в задачи покупателя.
+# Stage 2 — clusters. DeepSeek groups phrases into buyer jobs.
 cluster:
-  min_phrases: 4            # кластер меньше этого отбрасывается: одна фраза — не бизнес
+  min_phrases: 4            # a cluster below this is discarded: one phrase is not a business
   max_clusters: 60
-  phrases_per_call: 350     # сколько фраз отдаём модели за один вызов
-  min_phrases_per_call: 40  # при обрыве ответа по лимиту вывода порция делится пополам, но не мельче этого
-  # Проход расщепления: после слияния каждый крупный кластер проверяется на склейку разных работ.
-  # Скептик ловил её в четырёх кластерах из восьми, но в самом конце — после замеров и проверки,
-  # когда вердикт сводился к «цифры посчитаны по смеси». Здесь это один дешёвый вызов на кластер.
+  phrases_per_call: 350     # how many phrases are handed to the model in one call
+  min_phrases_per_call: 40  # when a response is cut off by the output limit, the batch is halved, but not below this
+  # The split pass: after merging, every large cluster is checked for glued distinct jobs.
+  # The skeptic caught it in four clusters out of eight, but at the very end — after measuring and review,
+  # when the verdict reduced to "the numbers were computed over a mixture". Here it is one cheap call per cluster.
   split: true
-  split_sample: 120         # сколько фраз кластера показываем модели при расщеплении
-  split_max_groups: 4       # больше — признак резки по стадии пути, а не по работе; ответ отбрасывается
-  split_passes: 3           # подкластер сам бывает склейкой; цикл встаёт, когда проход ничего не изменил
+  split_sample: 120         # how many cluster phrases are shown to the model when splitting
+  split_max_groups: 4       # more is a sign of cutting by journey stage, not by job; the answer is discarded
+  split_passes: 3           # a subcluster can itself be a mix; the loop stops when a pass changes nothing
 
-# Стадия 3 — отсев. Три бинарные проверки по наблюдаемым сигналам.
+# Stage 3 — screen. Three binary checks over observable signals.
 screen:
-  upwork: {enabled: true, min_jobs: 3, min_budget: 200, window_days: 90}   # через MCP-мост
+  upwork: {enabled: true, min_jobs: 3, min_budget: 200, window_days: 90}   # via the MCP bridge
   freelancer: {enabled: true}
   marketplaces: {enabled: true, sources: [apify, wordpress, atlassian, vscode, obsidian, smithery]}
   serp: {enabled: true, provider: brave, phrases_per_cluster: 2, max_brands_top5: 2}
   hn: {enabled: true}
-  # Какие проверки обязательны для прохода: money | reachable | software.
-  # В режиме self_serve обязателен только software. money — это заказы на Upwork и Freelancer,
-  # то есть след услуги; продукт за $19/мес такого следа не оставляет по построению, и в прогоне
-  # 2026-09-20 это правило сняло 42 кластера из 60 за соответствие цели. Теперь money собирается
-  # как бонусный сигнал и едет в карточку, но никого не отсекает.
-  # reachable (плотность брендов в топ-5) на контроле отбраковал 7 живых ниш из 10 — он стал
-  # пометкой на стадии гейтов, а не условием прохода.
+  # Which checks are mandatory for passing: money | reachable | software.
+  # In self_serve mode only software is mandatory. money means Upwork and Freelancer jobs,
+  # that is, a trace of a service; a $19/mo product leaves no such trace by construction, and in the
+  # 2026-09-20 run this rule removed 42 clusters out of 60 for no good reason. Now money is collected
+  # as a bonus signal and travels into the card, but cuts no one off.
+  # reachable (brand density in the top 5) rejected 7 live niches out of 10 on the control — it became
+  # a flag at the gate stage, not a passing condition.
   require: [software]
 
-# Стадия 4 — цифры. Провайдеры в порядке приоритета; недоступные пропускаются.
+# Stage 4 — measure. Providers in priority order; unavailable ones are skipped.
 measure:
   providers: [google_ads, bing, ubersuggest]
-  ubersuggest_daily_reports: 3     # лимит free-тира; тратится только на лучшие по отсеву кластеры
+  ubersuggest_daily_reports: 3     # the free-tier limit; spent only on the best-screened clusters
   country: US
   language: en
   location_id: 2840                # Google geo target: 2840 = United States
-  months: 24                       # глубина помесячного ряда: 24 нужны, чтобы считать год к году
-  trend_min_mean_volume: 20        # ниже этого среднего помесячный тренд считается шумом (неизвестен)
+  months: 24                       # the depth of the monthly series: 24 are needed to compute year over year
+  trend_min_mean_volume: 20        # below this mean the monthly trend is considered noise (unknown)
 
-# Стадия 5 — гейты. Числовые пороги; неизвестное не превращается в ноль.
-# Пороги-отказы проверены положительным контролем: python3 -B scripts/calibrate.py --run calib-<дата>.
+# Stage 5 — gates. Numeric thresholds; the unknown is not turned into zero.
+# The rejecting thresholds are validated by the positive control: python3 -B scripts/calibrate.py --run calib-<date>.
 gate:
-  min_volume_sum: 120           # средний месячный объём кластера за последний год; контроль дал минимум 129
-  # Падение год к году относительно фона поиска из config/calibration-baseline.json.
-  # Абсолютным числом тренд судить нельзя: на контроле восемь живых ниш из десяти падают,
-  # медиана — минус 22% за год. Это состояние поиска, а не признак мёртвой ниши.
-  # Отказ получает тот, кто падает на 30 процентных пунктов хуже фона.
+  min_volume_sum: 120           # the cluster's average monthly volume over the last year; the control minimum was 129
+  # Year-over-year decline relative to the search baseline from config/calibration-baseline.json.
+  # The trend cannot be judged by an absolute number: on the control, eight live niches out of ten decline,
+  # the median being minus 22% per year. That is the state of search, not a sign of a dead niche.
+  # Rejection goes to whoever declines 30 percentage points worse than the baseline.
   min_trend_yoy_vs_baseline: -0.3
   allowed_intents: [commercial, tool_shaped]
-  cpc_flag_above: 20            # не отказ: ставка выше — повод проверить, кто покупатель
-  flag_top_share: 0.9           # не отказ: объём кластера держит одна фраза (на контроле максимум 0.83)
-  # Отсечка услуг в режиме self_serve: доля фраз, где покупают человекочасы, а не продукт.
-  # На контроле живые ниши дают 0.00–0.08, внедрение ERP — 1.00. Слова «service» в списке нет:
-  # «email verification service» — это продукт.
+  cpc_flag_above: 20            # not a rejection: a higher bid is a reason to check who the buyer is
+  flag_top_share: 0.9           # not a rejection: one phrase carries the cluster's volume (the control maximum is 0.83)
+  # The services cutoff in self_serve mode: the share of phrases where person-hours are bought, not a product.
+  # On the control, live niches give 0.00–0.08, ERP implementation — 1.00. The word "service" is not in the list:
+  # "email verification service" is a product.
   max_services_share: 0.3
-  # Слово после «for» называет покупателя: «scheduling tool for agencies» — продукт, а не услуга.
+  # The word after "for" names the buyer: "scheduling tool for agencies" is a product, not a service.
   services_words: [consultant, consulting, implementation, agency, freelancer, outsourcing, staffing, 'hire ']
 
-# Стадия 6 — проверка. Роли на DeepSeek; скептик и судья с чистым контекстом.
+# Stage 6 — review. Roles on DeepSeek; skeptic and judge with fresh context.
 review:
   max_clusters: 12
-  # Отбор берёт кластеры поровну из полос объёма, а не двенадцать самых крупных: верх списка
-  # по объёму — это всегда самые конкурентные категории, а узкие ниши до проверки не доходили.
+  # Selection takes clusters evenly from volume bands, not the twelve largest: the top of the list
+  # by volume is always the most competitive categories, and narrow niches never reached review.
   volume_bands: [20000, 2000]
-  ask_upwork: true          # спросить биржу по отобранным: здесь ответ ещё меняет вердикт
+  ask_upwork: true          # ask the marketplace about the selected ones: here the answer still changes the verdict
   interpret_search_queries: 4
   skeptic_search_queries: 6
   max_steps: 24
 
-# Модели по ролям. Провайдеры и ключи — в config/model-routing.yaml (секция providers).
+# Models per role. Providers and keys — in config/model-routing.yaml (the providers section).
 models:
   cluster:   {provider: deepseek, model: deepseek-chat}
   interpret: {provider: deepseek, model: deepseek-chat}
@@ -149,16 +149,16 @@ models:
   judge:     {provider: deepseek, model: deepseek-v4-pro, reasoning_effort: high}
   narrative: {provider: deepseek, model: deepseek-chat}
 
-# Уведомления в Telegram: после каких стадий писать и слать ли PDF в конце.
+# Telegram notifications: after which stages to post, and whether to send the PDF at the end.
 notify:
   telegram: true
   stages: [expand, cluster, screen, measure, gate, review, report]
   send_pdf: true
 
-# Бэклог между прогонами.
+# Backlog between runs.
 backlog:
   path: backlog/clusters.jsonl
-  refresh_days: 60          # не измерять заново кластер, измеренный меньше N дней назад
+  refresh_days: 60          # do not re-measure a cluster measured less than N days ago
 
 limits:
   max_active_agents: 8

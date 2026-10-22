@@ -1,220 +1,216 @@
-# Архитектура приложения Codex
+# Codex Application Architecture
 
-## Два уровня исполнения
+## Two execution layers
 
-Codex выполняет смысловую работу: понимает запрос, планирует задания, запускает работников, оценивает доказательства и объясняет результат. Локальный Python-код обеспечивает очередь, сохранение состояния, проверку схем/хешей/авторства, приёмку артефактов, расчёт индексов и сборку машинной части отчёта.
+Codex performs the semantic work: it understands the request, plans assignments, launches workers, assesses evidence, and explains the outcome. The local Python code provides the queue, state persistence, schema/hash/authorship validation, artifact acceptance, index computation, and assembly of the machine part of the report.
 
-Codex — единственный оркестратор. Он не является ролью исследования: он вызывает реальные инструменты сотрудничества (`spawn_agent`, `send_input`, `wait_agent`, `close_agent`, `resume_agent`), получает фактический идентификатор агента и связывает его с заданием.
+Codex is the only orchestrator. It is not a research role: it calls the real collaboration tools (`spawn_agent`, `send_input`, `wait_agent`, `close_agent`, `resume_agent`), receives the actual agent identity, and binds it to the assignment.
 
-Запись `queued` не означает, что агент запущен. Root должен вызвать реальный инструмент сотрудничества Codex и связать возвращённый идентификатор агента с заданием. Скрипт, который только создаёт файлы, не может сообщать об исполненной агентом работе.
+A `queued` record does not mean an agent was launched. Root must call a real Codex collaboration tool and bind the returned agent identity to the assignment. A script that only creates files cannot report agent-performed work.
 
-## Роли и разделение авторства
+## Roles and separation of authorship
 
-Канонический набор — восемь ролей исследования:
+The canonical set is eight research roles:
 
-- `discovery` — рабочий процесс и боль; коммерческих оценок не ставит;
-- `demand`, `money`, `competition`, `distribution`, `feasibility` — отдельные аспекты, у каждого свой результат;
-- `skeptic` — независимая проверка доказательств;
-- `judge` — оценка по зафиксированным материалам.
+- `discovery` — the workflow and the pain; it assigns no commercial ratings;
+- `demand`, `money`, `competition`, `distribution`, `feasibility` — separate facets, each with its own result;
+- `skeptic` — independent evidence review;
+- `judge` — assessment based on the frozen record.
 
-Оркестратор в этот список не входит. Один совместимый работник может выполнять несколько ролей, но каждый результат остаётся отдельным. Проверять собственные открытия нельзя: discovery-автор не может валидировать или судить своего кандидата, `skeptic` не может быть автором проверяемых аспектов, `judge` не может быть автором разбора под оценкой. Root может судить только при отсутствии такого конфликта.
+The orchestrator is not part of this list. One compatible worker may perform several roles, but every result remains separate. Self-review is not allowed: a discovery author cannot validate or judge their own candidate, `skeptic` cannot author the facets it reviews, `judge` cannot author the analysis under assessment. Root may judge only when no such conflict exists.
 
-Порог рекомендации `qualified`: приняты `discovery`, `money`, `distribution`, `feasibility`, `skeptic`, `judge`. Аспекты `demand` и `competition` обязательны только тогда, когда оценка ссылается на их утверждения; иначе отсутствие фиксируется как явный пробел в отчёте.
+The `qualified` recommendation threshold: accepted `discovery`, `money`, `distribution`, `feasibility`, `skeptic`, `judge`. The `demand` and `competition` facets are mandatory only when the assessment references their claims; otherwise their absence is recorded as an explicit gap in the report.
 
-## Тип прогона и портфельные квоты
+## Run type and portfolio quotas
 
-`create-run` требует явный `--scope`:
+`create-run` requires an explicit `--scope`:
 
-- `targeted` — проверка гипотезы или обновление доказательств; обнаружение и число кандидатов определяются задачей;
-- `mining` — широкий поиск по отраслям; к нему применяется анти-биас аудит портфеля.
+- `targeted` — hypothesis verification or evidence refresh; discovery and candidate counts follow the task;
+- `mining` — a broad search across industries; the portfolio anti-bias audit applies to it.
 
-Квоты никогда не блокируют постановку заданий. Для `mining` они считаются по корпусу, показываются в `status` и проверяются на `finalize`; провал допускает только явный обход с записанной причиной (`report --override-quota REASON`), который попадает в манифест, события и отчёт. Для `targeted` аудит помечается как неоценённый.
+Quotas never block assignment queuing. For `mining` they are computed over the corpus, shown in `status`, and checked at `finalize`; a failure allows only an explicit override with a recorded reason (`report --override-quota REASON`), which lands in the manifest, the events, and the report. For `targeted` the audit is marked as not assessed.
 
-## Работа по запросу
+## Request-driven work
 
-Запрос определяет цель, тип, ограничения, бюджет и условие остановки. Задания строятся по зависимостям, а не по фиксированной воронке. Обнаружение можно продолжать, пока прогон активен; доказательная работа требует принятого discovery-результата конкретного кандидата, `skeptic` — хотя бы одного принятого аспекта, `judge` — принятого разбора `skeptic`.
+The request defines the objective, type, constraints, budget, and stopping condition. Assignments are built from dependencies, not from a fixed funnel. Discovery can continue while the run is active; evidence work requires an accepted discovery result for a concrete candidate, `skeptic` requires at least one accepted facet, `judge` requires an accepted `skeptic` analysis.
 
-Перед назначением root проверяет независимость исполнителя и замораживает входной пакет. После результата root выполняет машинные проверки и принимает попытку либо возвращает конкретную ошибку. Изменившиеся входы делают зависимые результаты устаревшими. Исчерпание бюджета означает пробел или отсрочку, а не разрешение придумать ответ.
+Before dispatching, root verifies worker independence and freezes the input packet. After a result arrives, root performs the machine checks and accepts the attempt or returns the specific error. Changed inputs make dependent results stale. Budget exhaustion means a gap or a deferral, not permission to invent an answer.
 
-## Артефакты и состояния
+## Artifacts and states
 
-Основная структура — `runs/<run-id>/`; каталог не коммитится в git.
+The core structure is `runs/<run-id>/`; the directory is not committed to git.
 
-- манифест хранит цель, тип, условие остановки, снимок доступности инструментов, авторов, решения, обход квот и ссылку на отчёт;
-- замороженные пакеты и результаты — `work/<assignment-id>/attempt-<n>/input.json` и `result.json`;
-- канонические досье — `candidates/<candidate-id>/hypothesis.json`, `research/<role>.json`, `assessment.json`, вычисленный `score.json`;
-- реестр утверждений — `claims.jsonl` в корне прогона;
-- технический отчёт — `report.md`; основной пользовательский deliverable — `report.pdf`, previews и hash-bound запись визуальной проверки.
+- the manifest stores the objective, type, stopping condition, capability snapshot, authors, decisions, quota overrides, and the report link;
+- frozen packets and results — `work/<assignment-id>/attempt-<n>/input.json` and `result.json`;
+- canonical dossiers — `candidates/<candidate-id>/hypothesis.json`, `research/<role>.json`, `assessment.json`, computed `score.json`;
+- the claim registry — `claims.jsonl` at the run root;
+- the technical report — `report.md`; the primary user deliverable — `report.pdf`, previews, and a hash-bound visual review record.
 
-Входной пакет задания описан отдельной схемой: роль, цель, тип прогона, бюджет, разрешённые действия, точный путь результата, требования приёмки, хеш конфигурации, автор-дискаверер и уже принятые работники, гипотеза и утверждения. Фактическая привязка работника хранится в попытке, а способ доставки результата (`direct` или `relayed`) фиксируется явно: среда, где суб-агент не может писать в основное дерево, не должна скрывать это. Спайк в текущей среде показал, что суб-агент пишет прямо в основное дерево, поэтому `direct` — штатный режим, а `relayed` остаётся запасным.
+The assignment input packet is described by a dedicated schema: role, objective, run type, budget, allowed actions, exact result path, acceptance requirements, configuration hash, discovery author and already accepted workers, hypothesis, and claims. The actual worker binding is stored in the attempt, and the delivery mode (`direct` or `relayed`) is recorded explicitly: an environment where a sub-agent cannot write to the main tree must not hide that fact. A spike in the current environment showed that a sub-agent writes directly to the main tree, so `direct` is the normal mode and `relayed` remains the fallback.
 
-Принятую попытку нельзя перезаписать исправленным содержимым; создаётся новая попытка. Решение по кандидату (`qualified`, `rejected`, `deferred`, `duplicate`) хранится отдельно от неизменяемого описания кандидата.
+An accepted attempt cannot be overwritten with corrected content; a new attempt is created. The decision on a candidate (`qualified`, `rejected`, `deferred`, `duplicate`) is stored separately from the immutable candidate description.
 
-## Команды приложения
+## Application commands
 
-`create-run --run ID --objective TEXT --scope {targeted,mining} --stopping-condition TEXT [--brief path] [--capabilities path]`, `queue --run ID --candidate CID --role ROLE --input packet.json [--retry]`, `bind --run ID --assignment AID --agent-id ACTUAL [--reused-context] [--provider P] [--model M]`, `accept --run ID --assignment AID --result PATH [--delivery direct|relayed]`, `next|status --run ID`, `decide --run ID --candidate CID --status STATUS --reason TEXT --author-id ACTUAL [--claim-id ...] [--duplicate-of CID]`, `cancel --run ID --assignment AID --reason TEXT`, `validate --run ID`, `report --run ID [--override-quota REASON]`, `pdf-review --run ID --author-id ACTUAL --reason NOTES`, `finalize --run ID`. Точные параметры перечислены в `scripts/app.py --help`.
+`create-run --run ID --objective TEXT --scope {targeted,mining} --stopping-condition TEXT [--brief path] [--capabilities path]`, `queue --run ID --candidate CID --role ROLE --input packet.json [--retry]`, `bind --run ID --assignment AID --agent-id ACTUAL [--reused-context] [--provider P] [--model M]`, `accept --run ID --assignment AID --result PATH [--delivery direct|relayed]`, `next|status --run ID`, `decide --run ID --candidate CID --status STATUS --reason TEXT --author-id ACTUAL [--claim-id ...] [--duplicate-of CID]`, `cancel --run ID --assignment AID --reason TEXT`, `validate --run ID`, `report --run ID [--override-quota REASON]`, `pdf-review --run ID --author-id ACTUAL --reason NOTES`, `finalize --run ID`. Exact parameters are listed in `scripts/app.py --help`.
 
-## Отчёт
+## The report
 
-`report` собирает компактную машинную секцию: лучшие кандидаты, Investigation Priority, Payment Confidence, Transaction Evidence Strength, коммерческий статус и ссылки на канонический реестр. Полный `claims.jsonl` не копируется в большую таблицу. Narrative-секции пишет Codex в виде русского executive summary и карточек кандидатов: почему интересен, расходы, боль/частота, конкуренция, distribution, feasibility, главная неизвестная и самый дешёвый decisive test. Повторный `report` обновляет машинную секцию, сохраняет narrative и генерирует `report.pdf`.
+`report` assembles a compact machine section: top candidates, Investigation Priority, Payment Confidence, Transaction Evidence Strength, commercial status, and links to the canonical registry. The full `claims.jsonl` is not copied into a large table. Narrative sections are written by Codex as a Russian executive summary and candidate cards: why it is interesting, spend, pain/frequency, competition, distribution, feasibility, the main unknown, and the cheapest decisive test. A repeated `report` refreshes the machine section, preserves the narrative, and generates `report.pdf`.
 
-PDF — основной deliverable. Он использует встроенный DejaVu Sans, проверяется обратным извлечением всех русских слов и Unicode map, рендерится Poppler в PNG по каждой странице. Root просматривает все previews и записывает hash-bound квитанцию через `pdf-review`; после изменения Markdown или PDF квитанция недействительна. `finalize` требует актуальные Markdown, PDF, previews и визуальную квитанцию.
+The PDF is the primary deliverable. It uses embedded DejaVu Sans, is verified by reverse extraction of every Russian word and the Unicode map, and is rendered by Poppler to one PNG per page. Root reviews all previews and records a hash-bound receipt via `pdf-review`; after the Markdown or PDF changes, the receipt is invalid. `finalize` requires current Markdown, PDF, previews, and the visual receipt.
 
-## Сырые источники
+## Raw sources
 
-Прогон хранит исходные bytes в `runs/<run-id>/sources/`: файл `<source-id>.json|html|txt|pdf|bin` и рядом
-`<source-id>.meta.json` с провайдером, точным запросом, URL, HTTP-статусом, датой сбора, SHA-256,
-размером, исходным/определённым content type и ограничениями источника. PDF и иные binary responses
-никогда не декодируются как UTF-8, не обрезаются и сохраняются byte-for-byte; SHA считается по
-исходному ответу. Неудачный запрос тоже сохраняется — как `retrieval_status: error`
-с текстом ошибки; он не превращается в данные и не исчезает. Утверждения ссылаются на `source_id`,
-а не на временные пути вне прогона. Canonical reference на `/tmp`, корень проекта или другой run
-отклоняется при приёмке.
+A run stores the original bytes in `runs/<run-id>/sources/`: file `<source-id>.json|html|txt|pdf|bin` plus a
+`<source-id>.meta.json` sidecar with the provider, exact query, URL, HTTP status, collection date, SHA-256,
+size, original/detected content type, and source limitations. PDF and other binary responses are
+never decoded as UTF-8, never truncated, and stored byte-for-byte; the SHA is computed over the
+original response. A failed request is also stored — as `retrieval_status: error`
+with the error text; it does not turn into data and does not disappear. Claims reference the `source_id`,
+not temporary paths outside the run. A canonical reference to `/tmp`, the project root, or another run
+is rejected at acceptance.
 
-`scripts/sources.py` подключает бесплатные источники без ключей: TED Search API (анонимный доступ к
-опубликованным тендерам ЕС), Wayback Machine для подтверждения версии страницы на дату и HN Algolia
-для обсуждений практиков. Эти данные описывают закупки, бюджеты и сообщения людей; они не заменяют
-проверку Skeptic'а и не доказывают оплату сами по себе.
+`scripts/sources.py` connects keyless free sources: the TED Search API (anonymous access to
+published EU tenders), the Wayback Machine for confirming a page version at a date, and HN Algolia
+for practitioner discussions. This data describes procurement, budgets, and people's messages; it does not replace
+the Skeptic review and does not prove payment by itself.
 
-## Воронка и дешёвые гипотезы
+## Funnel and cheap hypotheses
 
-Дорогие модели не должны видеть весь корпус. Дешёвые гипотезы накапливаются в
-`runs/<run-id>/hypotheses.jsonl` до control plane: запись содержит канонический атом ниши, но не
-содержит claims и не является кандидатом. `scripts/hypotheses.py` проверяет структуру атома, не
-допускает конфликтующих дублей, показывает покрытие отраслей портфеля и детерминированно выбирает
-очередную партию (round-robin по отраслям, чтобы одна отрасль не заняла всю стадию).
+Expensive models must not see the whole corpus. Cheap hypotheses accumulate in
+`runs/<run-id>/hypotheses.jsonl` before the control plane: a record contains the canonical niche atom but no
+claims, and is not a candidate. `scripts/hypotheses.py` validates the atom structure, rejects
+conflicting duplicates, shows portfolio industry coverage, and deterministically selects
+the next batch (round-robin over industries so one industry does not consume the whole stage).
 
-Числа стадий — бюджет прогона, а не требуемый размер корпуса: первый прогон идёт по
-`funnel.first_run` (40 → 12 → 5 → 3), целевой масштаб — `funnel.target_scale` (300 → 60 → 15 → 5).
-Light validation выполняет один экономичный worker на кандидата с малым query budget. Investigation
-Priority по принятым claims выбирает следующую порцию бюджета до Judge. Serious validation допускает
-одного совместимого worker для нескольких нужных facets при отдельных результатах. Deep investigation,
-Skeptic и Judge требуют строгой независимости и свежего контекста. Провайдер и модель берутся из `config/model-routing.yaml`
-(в политике стадии они остаются null), поэтому GLM, DeepSeek и другие модели подключаются без
-изменения контракта. Маленькая стадия докладывается как пробел, а не заполняется слабыми кандидатами.
+Stage numbers are run budgets, not required corpus sizes: the first run follows
+`funnel.first_run` (40 → 12 → 5 → 3), the target scale is `funnel.target_scale` (300 → 60 → 15 → 5).
+Light validation uses one economical worker per candidate with a small query budget. Investigation
+Priority selects the next share of the budget from accepted claims, up to Judge. Serious validation allows
+one compatible worker for several needed facets with separate results. Deep investigation,
+Skeptic, and Judge require strict independence and fresh context. Provider and model come from `config/model-routing.yaml`
+(they stay null in stage policy), so GLM, DeepSeek, and other models plug in without
+contract changes. A small stage is reported as a gap, not filled with weak candidates.
 
-## Исполнитель заданий
+## Assignment executor
 
-`scripts/worker.py` выполняет одно задание на реальной модели. Он читает замороженный packet,
-берёт промпт роли из `agents/`, сам привязывается к заданию (`bind` с фактическим провайдером и
-моделью), собирает доказательства через `scripts/search.py` и `scripts/sources.py` и пишет
-`result.json`. Приёмка остаётся у оркестратора: воркер не признаёт собственную работу выполненной.
+`scripts/worker.py` executes one assignment on a real model. It reads the frozen packet,
+takes the role prompt from `agents/`, binds itself to the assignment (`bind` with the actual provider and
+model), collects evidence through `scripts/search.py` and `scripts/sources.py`, and writes
+`result.json`. Acceptance stays with the orchestrator: a worker does not declare its own work done.
 
-Исполнитель берёт на себя то, в чём модели нельзя верить на слово. Журнал поисков строится из
-фактически сделанных вызовов, а не из пересказа модели. Поля авторства и идентичности штампует
-харнес, поэтому чужое авторство присвоить нельзя. Familiarity основателя выводится из отрасли и
-замороженного профиля, а не заявляется моделью. Бюджет semantic queries считается и отказывает на
-границе. Результат, не прошедший схему и контракт, возвращается модели с точным списком ошибок, а
-после исчерпания попыток исполнение падает, вместо того чтобы записать мусор.
+The executor owns what a model must not be trusted to report about itself. The search log is built from
+the calls that actually happened, not from the model's retelling. Authorship and identity fields are stamped by the
+harness, so someone else's authorship cannot be claimed. Founder familiarity is derived from the industry and
+the frozen profile, not asserted by the model. The semantic query budget is counted and refused at
+the boundary. A result that fails the schema and contract is returned to the model with the exact list of errors, and
+after attempts are exhausted, execution fails instead of writing garbage.
 
-`scripts/llm.py` — тонкий клиент к OpenAI-совместимому эндпоинту: провайдер, адрес и переменная
-ключа берутся из `config/model-routing.yaml`. Провайдер с другим протоколом отклоняется явно.
-Расход токенов пишется рядом с результатом в `usage.json` и попадает на дашборд.
+`scripts/llm.py` is a thin client to an OpenAI-compatible endpoint: provider, address, and the key
+variable come from `config/model-routing.yaml`. A provider with a different protocol is rejected explicitly.
+Token spend is written next to the result in `usage.json` and lands on the dashboard.
 
-## Маршрутизация моделей
+## Model routing
 
-Провайдер и модель каждой роли заданы в `config/model-routing.yaml`: `default` → роль → необязательный
-override по стадии. `null` означает выбор во время запуска, поэтому поведение по умолчанию не меняется.
-`scripts/routing.py` читает, проверяет по схеме и правит этот файл (`show`, `validate`, `set`).
+The provider and model for each role are set in `config/model-routing.yaml`: `default` → role → optional
+per-stage override. `null` means a choice at run time, so default behavior does not change.
+`scripts/routing.py` reads, schema-validates, and edits this file (`show`, `validate`, `set`).
 
-`app.py queue` разрешает маршрут для роли и стадии и кладёт результат в замороженный packet
-(`execution_policy.provider/model/reasoning_effort` плюс `routing_source`). Root обязан передать эти
-значения в `spawn_agent` и записать фактически использованную модель через
-`app.py bind --provider ... --model ...`; она хранится в попытке рядом с `worker_id`. Запрошенное и
-фактическое остаются раздельными: расхождение видно, а не замаскировано. Python по-прежнему не
-вызывает LLM, поэтому маршрутизация — это контракт с runtime, а не факт исполнения.
+`app.py queue` resolves the route for the role and stage and puts the result into the frozen packet
+(`execution_policy.provider/model/reasoning_effort` plus `routing_source`). Root must pass these
+values to `spawn_agent` and record the model actually used via
+`app.py bind --provider ... --model ...`; it is stored in the attempt next to `worker_id`. Requested and
+actual stay separate: a mismatch is visible, not masked. Python still does not
+call the LLM, so routing is a contract with the runtime, not a fact of execution.
 
-Skeptic и Judge имеет смысл держать на другой модели, чем авторы проверяемых материалов: запуски на
-общей модели не являются статистически независимыми (`independence.shared_model_runs_are_statistically_independent: false`).
+Skeptic and Judge are worth keeping on a different model than the authors of the material under review: runs on
+a shared model are not statistically independent (`independence.shared_model_runs_are_statistically_independent: false`).
 
-## Плоскость поиска и данных
+## Search and data plane
 
-Смысловая работа агентов отделена от добычи данных. Агент формулирует цель доказательства, а
-`scripts/search.py` обращается к сменяемому поисковому провайдеру (Brave по умолчанию, Tavily как
-запасной); ключи читаются из окружения или `.env.local`. Провайдер не зашит в логику исследования:
-его можно заменить, не меняя контракт результата.
+The semantic work of agents is separated from data acquisition. The agent formulates the evidence objective, and
+`scripts/search.py` queries a swappable search provider (Brave by default, Tavily as
+fallback); keys are read from the environment or `.env.local`. The provider is not hard-coded into the research logic:
+it can be replaced without changing the result contract.
 
-- Один поиск = один semantic query. Brave/Tavily fallback attempts получают общий логический ID и
-  вместе расходуют одну единицу бюджета. Каждый provider attempt, точный запрос, география, язык,
-  дата и ограничения сохраняются в `searches.jsonl`, сырой ответ — в `sources/`; rate-limit,
-  transport, HTTP и parse failures считаются отдельно.
-- Пропуск ключа даёт `capability_unavailable`: стадия, которой нужен поиск, докладывается как
-  заблокированная. Система не подменяет поиск скрапингом и не жжёт бюджет на обход защиты.
-- `429` — одна смена провайдера, без повторов того же; пустая выдача возвращается как `[]` без
-  расширения запроса; нераспознанный ответ — ошибка, а не «нет данных».
-- Поисковая выдача — зацепка, а не доказательство: рейтинг провайдера не подтверждает ни оплату, ни
-  распространённость. Найденные страницы открываются и архивируются до ссылки в утверждении.
+- One search = one semantic query. Brave/Tavily fallback attempts share one logical ID and
+  together consume one budget unit. Every provider attempt, exact query, geography, language,
+  date, and limitation is stored in `searches.jsonl`; the raw response goes to `sources/`; rate-limit,
+  transport, HTTP, and parse failures are counted separately.
+- A missing key yields `capability_unavailable`: a stage that needs search is reported as
+  blocked. The system does not substitute scraping for search and does not burn budget bypassing protection.
+- `429` means one provider switch, no retries of the same; an empty result set is returned as `[]` without
+  query expansion; an unrecognized response is an error, not "no data".
+- Search results are leads, not evidence: a provider ranking proves neither payment nor
+  prevalence. Found pages are opened and archived before being referenced in a claim.
 
-`preflight` фиксирует оффлайн-снимок доступности провайдеров (`search_capabilities`) без сетевых вызовов
-и предупреждает, если ни одного ключа нет.
+`preflight` records an offline snapshot of provider availability (`search_capabilities`) without network calls
+and warns when no keys exist.
 
-## Атрибуция источников
+## Source attribution
 
-Кто скачал источник — это провенанс, а не идентичность. `source_id` остаётся хешем запроса и ответа,
-поэтому одни и те же байты имеют один ID независимо от того, какой агент их запросил. Вызывающий
-агент передаёт `--assignment`, `--role` и `--worker` в `scripts/search.py` и `scripts/sources.py`;
-первый захват штампует `first_assignment_id` в sidecar, а каждое использование добавляется строкой в
-`runs/<run-id>/source_usage.jsonl`. Пропуск флагов ничего не ломает и записывается как `null`.
+Who downloaded a source is provenance, not identity. The `source_id` remains a hash of the query and response,
+so the same bytes have one ID no matter which agent requested them. The calling agent passes `--assignment`, `--role`, and `--worker` to `scripts/search.py` and `scripts/sources.py`;
+the first fetch stamps `first_assignment_id` in the sidecar, and every use appends a line to
+`runs/<run-id>/source_usage.jsonl`. Omitting the flags breaks nothing and is recorded as `null`.
 
-Дашборд достраивает атрибуцию назад по `result.json` (`search_log`, `claims`) и `claims.jsonl` для
-прогонов, сделанных до появления штампов, и в каждой строке говорит, каким путём она получена.
-Источник, на который никто не сослался, остаётся сиротой и попадает в диагностику, а не привязывается
-к правдоподобному агенту.
+The dashboard reconstructs attribution backwards from `result.json` (`search_log`, `claims`) and `claims.jsonl` for
+runs made before the stamps existed, and in every line states the path by which it was obtained. A source no one referenced remains an orphan and lands in diagnostics rather than being attached to a plausible agent.
 
-## Внешние действия
+## External actions
 
-Отправка чего-либо наружу — отдельное действие, а не часть исследования. Оно требует явной
-авторизации в запросе пользователя и выполняется только при настроенных `TELEGRAM_BOT_TOKEN` и
-`TELEGRAM_CHAT_ID`; при отсутствии ключей `credentials()` возвращает `available: false`, и отправка
-не подменяется ничем другим. `scripts/telegram.py` отправляет `report.md` документом, архивирует
-ответ Bot API (включая отказ) в `sources/` и никогда не пишет токен в URL артефакта или в лог.
-Отправка не является рыночным доказательством и не заменяет артефакты прогона.
+Sending anything outward is a separate action, not part of research. It requires explicit
+authorization in the user request and runs only with `TELEGRAM_BOT_TOKEN` and
+`TELEGRAM_CHAT_ID` configured; without keys, `credentials()` returns `available: false`, and sending
+is not substituted with anything else. `scripts/telegram.py` sends `report.md` as a document, archives
+the Bot API response (including refusal) to `sources/`, and never writes the token into an artifact URL or a log.
+Sending is not market evidence and does not replace run artifacts.
 
-## Независимая проверка и приёмка
+## Independent review and acceptance
 
-Автоматически проверяются схемы, реальные ссылки на назначение, входные/выходные хеши, разрешённые роли, разделение авторства, существование утверждений, завершённость зависимостей, воспроизводимость расчётов и целостность отчёта.
+Schemas, real assignment references, input/output hashes, allowed roles, separation of authorship, claim existence, dependency completeness, calculation reproducibility, and report integrity are checked automatically.
 
-Смысловую поддержку источником проверяет Skeptic, а не JSON Schema. Root принимает результаты только после обеих применимых проверок. Машинная проверка не должна утверждать, что истинность рыночных выводов доказана синтаксисом.
+Whether a source actually supports a claim is checked by Skeptic, not JSON Schema. Root accepts results only after both applicable checks. The machine check must not assert that the truth of market conclusions is proven by syntax.
 
-## Критерии коммерческих выводов
+## Criteria for commercial conclusions
 
-Конфигурация задаёт Payment Confidence и Transaction Evidence Strength отдельно. Публичная цена
-подтверждает предложение, но одна не доказывает paid use. Независимый buyer/practitioner report,
-наблюдаемый labor/outsourcing spend, несколько платных конкурентов и recurring workflow могут вместе
-подтвердить meaningful existing spend без invoice. Прямой transaction artifact повышает отдельную
-оценку прямоты и обязателен только для самого сильного transaction-level вывода. Смежные расходы не
-становятся расходами на точную задачу.
+The configuration defines Payment Confidence and Transaction Evidence Strength separately. A public price
+establishes an offer, but one alone does not prove paid use. An independent buyer/practitioner report,
+observed labor/outsourcing spend, several paid competitors, and a recurring workflow can together
+establish meaningful existing spend without an invoice. A direct transaction artifact raises a separate
+directness rating and is mandatory only for the strongest transaction-level conclusion. Adjacent spending does not
+become spending on the exact job.
 
-Investigation Priority отвечает только за следующий research budget и может быть высоким при
-неизвестной дистрибуции или реализуемости. Commercial Qualification отдельно требует подтверждённую
-оплату, distribution, feasibility, независимый review и отсутствие фатального противоречия. Профиль
-основателя валидируется отдельной схемой; `outside_confirmed_familiarity` расширяет anti-bias поиск,
-но не переименовывается в `confirmed_unfamiliar`.
+Investigation Priority only allocates the next research budget and can be high with
+unknown distribution or feasibility. Commercial Qualification separately requires confirmed
+payment, distribution, feasibility, an independent review, and no fatal contradiction. The founder
+profile is validated by a dedicated schema; `outside_confirmed_familiarity` widens the anti-bias search
+but is never renamed to `confirmed_unfamiliar`.
 
-## Ранжирование и сигнал переключения
+## Ranking and switching signal
 
-Индексы задачи и бизнеса остаются раздельными. Дополнительно для кандидатов, **уже прошедших все
-жёсткие гейты**, считается детерминированный взвешенный рейтинг (`config/scoring.yaml` → `ranking`):
-доказательство оплаты 35, боль 15, частота 10, дистрибуция 10, шкала 70. Веса взяты из документа
-исследования с двумя правками: «existing spend» слит с доказательством оплаты (это одно наблюдение),
-а founder fit исключён, чтобы незнакомая отрасль не проигрывала только из-за незнакомости. Факторы
-без якорной оценки (конкуренция, простота MVP, направление рынка) в рейтинг не входят и показываются
-как пробелы. Рейтинг — порядковый инструмент приоритизации, не вероятность и не калиброванный прогноз.
+The job and business indices stay separate. Additionally, for candidates that have **already passed every
+hard gate**, a deterministic weighted ranking is computed (`config/scoring.yaml` → `ranking`):
+payment evidence 35, pain 15, frequency 10, distribution 10, scale 70. The weights come from the research
+document with two edits: "existing spend" is merged into payment evidence (it is one observation), and founder fit is excluded so an unfamiliar industry does not lose only because of unfamiliarity. Factors
+without an anchored rating (competition, MVP ease, market direction) are not part of the ranking and are shown
+as gaps. The ranking is an ordinal prioritization tool, not a probability and not a calibrated forecast.
 
-Публичная цена или траты вместе с недовольством — это **сигнал переключения**, а не более сильное
-доказательство оплаты. Он оценивается в `switching_opportunity` и выводится как
-`switching_signal_rating`, никогда не повышая Payment Confidence.
+A public price or observed spend combined with dissatisfaction is a **switching signal**, not stronger
+payment evidence. It is assessed in `switching_opportunity` and reported as
+`switching_signal_rating`, never raising Payment Confidence.
 
-## Дашборд
+## Dashboard
 
-`scripts/pipeline_viewer.py` собирает автономную страницу `docs/pipeline-map.html`: данные всех
-прогонов, стили (`scripts/pipeline_viewer.css`) и скрипт (`scripts/pipeline_viewer.js`) встроены в
-файл. Вкладки: обзор простым языком, источники с фильтрами по агенту/типу/кандидату, агенты и модели
-(запрошено vs фактически, генератор команды `routing.py set`), кандидаты, технический раздел со
-стадиями, хронологией и лимитами. Страница только читает артефакты и ничего не изменяет.
+`scripts/pipeline_viewer.py` assembles the self-contained page `docs/pipeline-map.html`: data of all
+runs, styles (`scripts/pipeline_viewer.css`), and the script (`scripts/pipeline_viewer.js`) are embedded into
+the file. Tabs: an overview in plain language, sources with agent/type/candidate filters, agents and models
+(requested vs actual, the generator for the `routing.py set` command), candidates, and a technical section with
+stages, chronology, and limits. The page only reads artifacts and changes nothing.
 
-## Проверка готовности
+## Readiness check
 
-`scripts/preflight.py` проверяет наличие обязательных файлов, корректность всех схем, отсутствие остатков прежнего пилота, запускает автономный набор тестов и синтетический прогон во временном каталоге. Тесты покрывают приёмку без привязки агента, самопроверку автора, неизменяемость попыток, неизвестные значения, порог `qualified`, портфельные квоты, целостность отчёта и полный цикл до `finalize`.
+`scripts/preflight.py` checks the presence of required files, the validity of every schema, the absence of leftovers from the earlier pilot, and runs the offline test suite and a synthetic run in a temporary directory. The tests cover acceptance without an agent binding, author self-review, attempt immutability, unknown values, the `qualified` threshold, portfolio quotas, report integrity, and the full cycle up to `finalize`.
 
-Примеры помечаются как синтетические. Наличие очереди или успешного теста Python не доказывает запуска агента: реальное делегирование проверяется отдельно в среде Codex. Разработка и проверки приложения не запускают рыночное исследование.
+Examples are marked as synthetic. A populated queue or a passing Python test does not prove an agent launch: real delegation is verified separately in the Codex environment. Application development and checks do not launch market research.

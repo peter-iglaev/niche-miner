@@ -1,8 +1,8 @@
-"""Стадия 2 — кластеры: DeepSeek группирует фразы в задачи покупателя.
+"""Stage 2 — clusters: DeepSeek groups phrases into buyer jobs.
 
-Кластер = одна работа, которую человек хочет сделать: каноническое имя, формулировка задачи,
-форма продукта, класс намерения, головная фраза и список фраз. Модель ничего не измеряет — только
-группирует; её сырой ответ архивируется, каждый кластер сверяется с бэклогом.
+A cluster = one job a person wants to get done: canonical name, job statement,
+product shape, intent class, head phrase, and a phrase list. The model measures nothing — it only
+groups; its raw response is archived, and every cluster is reconciled against the backlog.
 """
 from __future__ import annotations
 
@@ -18,47 +18,47 @@ from scripts.pipeline.run import finish_stage, read_stage_jsonl, write_stage_jso
 SHAPES = ("tool", "template", "service", "content", "unknown")
 INTENTS = ("commercial", "tool_shaped", "informational", "navigational")
 
-SYSTEM = """Ты группируешь поисковые фразы в задачи покупателя (jobs to be done) для исследования ниш.
-Правила:
-- Один кластер = одна конкретная работа, которую человек хочет сделать, а не тема и не категория продукта.
-- Головная фраза (head_phrase) — самая общая фраза кластера из списка, по ней потом запросят цифры.
-- product_shape: tool (инструмент/SaaS), template (шаблон/чеклист), service (услуга людьми), content (статья/обучение), unknown.
-- intent: commercial (ищут что купить: tool/software/pricing/alternative/service), tool_shaped (фраза буквально описывает
-  инструмент: calculator/checker/validator/generator/converter/template), informational (как/что/почему), navigational (бренд).
-- Не выдумывай фразы: в phrases только фразы из входного списка, дословно.
-- Фразы, которые не образуют работу (брендовые, случайные), клади в кластер с name "прочее".
-- Не создавай кластер из одной-двух фраз: если работа не набирает хотя бы четыре фразы, отправь их в "прочее".
-- Общее слово — не работа. Разные покупатели и разные работы не склеиваются, даже если фразы совпадают
-  по слову: «referral» у HR-рекрутинга, у направления пациентов и у партнёрского маркетинга — три разные
-  работы; «pim» у товарных каталогов, у Entra Privileged Identity Management и у бренда конфет — три разных
-  предмета; «migrate to shopify» у мерчанта и «shopify to woocommerce» у разработчика — две разные работы.
-  Если в группе видны два покупателя или два предмета, делай два кластера.
-- Кластеров на партию — сколько получилось работ. Не подгоняй под число: лучше двенадцать чистых кластеров
-  и большое "прочее", чем двадцать пять, где в каждом по три разные работы.
-Отвечай только JSON вида {"clusters":[{"name":"...","job":"...","product_shape":"...","intent":"...","head_phrase":"...","phrases":["..."]}]}.
-name — короткое английское имя задачи (3–6 слов), job — одно предложение по-русски."""
+SYSTEM = """You group search phrases into buyer jobs (jobs to be done) for niche research.
+Rules:
+- One cluster = one concrete job a person wants to get done, not a topic and not a product category.
+- The head phrase (head_phrase) is the most general phrase of the cluster from the list; the numbers will be queried for it later.
+- product_shape: tool (a tool/SaaS), template (a template/checklist), service (a service by people), content (an article/training), unknown.
+- intent: commercial (they are looking for something to buy: tool/software/pricing/alternative/service), tool_shaped (the phrase literally describes
+  a tool: calculator/checker/validator/generator/converter/template), informational (how/what/why), navigational (a brand).
+- Do not invent phrases: phrases contains only phrases from the input list, verbatim.
+- Phrases that do not form a job (branded, random ones) go into the cluster with name "other".
+- Do not create a cluster from one or two phrases: if a job does not gather at least four phrases, send them to "other".
+- A shared word is not a job. Different buyers and different jobs are not merged, even when the phrases share
+  a word: "referral" in HR recruiting, in patient referrals, and in affiliate marketing is three different
+  jobs; "pim" in product catalogs, in Entra Privileged Identity Management, and in a candy brand is three different
+  subjects; "migrate to shopify" for a merchant and "shopify to woocommerce" for a developer are two different jobs.
+  If a group shows two buyers or two subjects, make two clusters.
+- As many clusters per batch as there are jobs. Do not fit a number: twelve clean clusters
+  and a large "other" is better than twenty-five where each holds three different jobs.
+Reply with JSON only, shaped {"clusters":[{"name":"...","job":"...","product_shape":"...","intent":"...","head_phrase":"...","phrases":["..."]}]}.
+name is a short English job name (3–6 words), job is one sentence in Russian."""
 
 
-# Формы инструмента: если головная фраза буквально называет инструмент, кластер не может быть
-# «информационным». Список тот же, что у оператора tool_shaped на стадии разворота.
+# Tool shapes: if the head phrase literally names a tool, the cluster cannot be
+# "informational". The list is the same as the tool_shaped operator at the expand stage.
 TOOL_SHAPES = ("tool", "tools", "maker", "generator", "checker", "check", "validator", "converter",
                "calculator", "software", "template", "templates", "monitor", "tracker", "linter",
                "audit", "analyzer", "scanner", "tester", "test", "api", "app", "platform")
 
 
 def tool_shaped(phrase):
-    """Фраза буквально описывает инструмент."""
+    """The phrase literally describes a tool."""
     words = set((phrase or "").lower().replace("-", " ").split())
     return any(shape in words for shape in TOOL_SHAPES)
 
 
 def tool_shaped_cluster(head, phrases, *, share=0.25):
-    """Интент кластера как минимум tool_shaped, если это видно по фразам, а не по мнению модели.
+    """The cluster intent is at least tool_shaped when the phrases show it, not the model's opinion.
 
-    Проход расщепления породил подкластеры, где модель ставила informational кластеру с головой
-    «youtube thumbnail maker»; гейт интента снимал их за разметку, а не за нишу. Одной головы
-    мало: кластер про проверку доставляемости шёл с головой «email deliverability check», а его
-    самые объёмные фразы — tester, tools, checker, platform. Поэтому смотрим и на долю фраз.
+    The split pass produced subclusters where the model labeled informational a cluster headed
+    "youtube thumbnail maker"; the intent gate removed them for labeling, not for the niche. One head
+    is not enough: a deliverability cluster arrived headed "email deliverability check" while its
+    most voluminous phrases were tester, tools, checker, platform. So the phrase share counts too.
     """
     if tool_shaped(head):
         return True
@@ -68,19 +68,19 @@ def tool_shaped_cluster(head, phrases, *, share=0.25):
 
 
 def _coverage(phrase, phrases):
-    """Сколько других фраз кластера содержат все слова этой фразы."""
+    """How many other cluster phrases contain all words of this phrase."""
     bag = set(phrase.lower().split())
     return sum(1 for other in phrases if other != phrase and bag <= set(other.lower().split()))
 
 
 def central_phrase(phrases):
-    """Самая общая фраза кластера: та, чьи слова встречаются в наибольшем числе остальных.
+    """The most general cluster phrase: the one whose words occur in the largest number of others.
 
-    Раньше при негодной головной фразе от модели подставлялась первая по списку, а список
-    приходит отсортированным — то есть первая по алфавиту. Так кластер про расшифровку
-    подкастов назвался «apple podcast hide transcript» с нулевым объёмом, и по этой же фразе
-    собрались сигналы отсева: маркетплейсы, выдача и биржа отвечали не про ту работу. Судья
-    снял из-за этого один кластер целиком.
+    Previously, when the model's head phrase was unusable, the first list item was substituted, and the list
+    arrives sorted — that is, the first alphabetically. That is how a podcast-transcription cluster got named
+    "apple podcast hide transcript" with zero volume, and the screening signals were collected for that
+    same phrase: the marketplaces, the SERP, and the marketplace answered about the wrong job. The judge
+    dropped one whole cluster because of that.
     """
     if not phrases:
         return None
@@ -88,15 +88,15 @@ def central_phrase(phrases):
 
 
 def better_head(head, phrases, *, min_coverage=5, ratio=5):
-    """Головная фраза модели или более общая, если модель выбрала частный хвост.
+    """The model's head phrase, or the more general one if the model chose a narrow tail.
 
-    Фолбэк спасает только когда модель назвала фразу не из кластера. Но она регулярно
-    выбирает и вполне реальный, однако частный хвост: «atlantis terraform drift» при живой
-    «terraform drift», «how much tokens cost» при «token cost». По такому хвосту объём
-    нулевой, а сигналы отсева собираются именно по нему, и вердикт получается не про ту
-    работу. Отличие видно по покрытию: у хвоста слова встречаются в одной-двух фразах
-    кластера, у общей — в сотне (1 против 99 и 1 против 277 в прогоне devops-ai-2026-09-22).
-    Замена происходит только при разнице в разы, поэтому равные головы остаются как были.
+    The fallback only helps when the model named a phrase outside the cluster. But it regularly
+    picks a real yet narrow tail: "atlantis terraform drift" while "terraform drift" is alive, or
+    "how much tokens cost" while "token cost" is alive. Such a tail has zero volume, and the
+    screening signals are collected for exactly it, so the verdict ends up about the wrong job.
+    The difference is visible through coverage: a tail's words occur in one or two cluster phrases,
+    a general phrase's words in a hundred (1 vs 99 and 1 vs 277 in the devops-ai-2026-09-22 run).
+    The replacement happens only when the difference is severalfold, so equal heads stay as they are.
     """
     if not phrases:
         return head
@@ -131,7 +131,7 @@ def _clean(cluster, allowed):
 
 
 def cluster_phrases(run_id, phrases, config, *, root, who=None):
-    """Один или несколько вызовов модели; при нескольких батчах — общий проход слияния."""
+    """One or more model calls; with several batches, one shared merge pass."""
     settings = config.get("cluster") or {}
     choice = (config.get("models") or {}).get("cluster")
     batch = int(settings.get("phrases_per_call") or 350)
@@ -140,9 +140,9 @@ def cluster_phrases(run_id, phrases, config, *, root, who=None):
     min_batch = int(settings.get("min_phrases_per_call") or 40)
 
     def ask_batch(chunk):
-        """Кластеры для одной порции. Обрыв по лимиту вывода → делим порцию пополам."""
+        """Clusters for one batch. A reply cut off by the output limit → halve the batch."""
         messages = [{"role": "system", "content": SYSTEM},
-                    {"role": "user", "content": "Фразы:\n" + json.dumps(chunk, ensure_ascii=False)}]
+                    {"role": "user", "content": "Phrases:\n" + json.dumps(chunk, ensure_ascii=False)}]
         try:
             parsed, source_id, usage = ask_json(run_id, "cluster", messages, model_choice=choice, root=root, who=who)
         except TruncatedReply:
@@ -167,13 +167,13 @@ def cluster_phrases(run_id, phrases, config, *, root, who=None):
         clusters, merge_source = _merge(run_id, clusters, choice, root, who)
         source_ids.append(merge_source)
     if settings.get("split", True):
-        # Слияние сводит одинаковое, расщепление разводит разное; порядок именно такой,
-        # иначе склейка, собранная слиянием из двух партий, останется незамеченной.
+        # Merging collapses the same; splitting pulls apart the different. The order is exactly this,
+        # otherwise a mix assembled by merging two batches would stay unnoticed.
         #
-        # Проходов несколько: один разбирает верхний слой склейки, но подкластер сам может
-        # оказаться склейкой. В проверочном прогоне 2026-09-23 после одного прохода скептик
-        # всё ещё нашёл шесть работ в «SEO rank tracking tools» и три в «media kit».
-        # Цикл останавливается, когда проход ничего не изменил.
+        # There are several passes: one resolves the top layer of the mix, but a subcluster can itself
+        # turn out to be a mix. In the verification run of 2026-09-23, after one pass the skeptic
+        # still found six jobs in "SEO rank tracking tools" and three in "media kit".
+        # The loop stops when a pass changed nothing.
         split_min = int(settings.get("min_phrases") or 4)
         sample = int(settings.get("split_sample") or 120)
         groups = int(settings.get("split_max_groups") or 4)
@@ -185,73 +185,73 @@ def cluster_phrases(run_id, phrases, config, *, root, who=None):
             if len(expanded) == len(clusters):
                 break
             clusters = expanded
-        # Расщепление режет каждый кластер отдельно и потому способно породить две почти
-        # одинаковые работы из разных родителей: в прогоне 2026-09-24 «diagnose email
-        # deliverability» и «email deliverability diagnostics» жили рядом и делили объём
-        # одной ниши пополам. Финальное слияние сводит такие пары обратно.
+        # Splitting cuts each cluster separately and can therefore produce two almost
+        # identical jobs from different parents: in the 2026-09-24 run "diagnose email
+        # deliverability" and "email deliverability diagnostics" lived side by side and split
+        # the volume of one niche in half. The final merge collapses such pairs back together.
         if len(clusters) > 1:
             clusters, after_split = _merge(run_id, clusters, choice, root, who)
             source_ids.append(after_split)
     return clusters, source_ids, usage_total
 
 
-SPLIT_SYSTEM = """Тебе дан один кластер поисковых фраз, который считается одной работой покупателя. Проверь это.
+SPLIT_SYSTEM = """You are given one cluster of search phrases that is supposed to be one buyer job. Verify that.
 
-Расщепляй ТОЛЬКО когда в кластере разные ПРЕДМЕТЫ или разные ПОКУПАТЕЛИ:
-- «referral»: HR-рефералы сотрудников, направления пациентов между клиниками и партнёрский маркетинг —
-  три разных покупателя, три кластера.
-- «PIM»: товарные каталоги, Entra Privileged Identity Management, радиочастотная интермодуляция и бренд
-  конфет — четыре разных предмета.
-- «migrate to shopify»: мерчант уходит на Shopify и разработчик уходит с Shopify — разные покупатели
-  и противоположные направления.
+Split ONLY when the cluster contains different SUBJECTS or different BUYERS:
+- "referral": employee referrals in HR, patient referrals between clinics, and affiliate marketing are
+  three different buyers, three clusters.
+- "PIM": product catalogs, Entra Privileged Identity Management, RF intermodulation, and a candy
+  brand are four different subjects.
+- "migrate to shopify": a merchant moving to Shopify and a developer moving away from Shopify are different buyers
+  and opposite directions.
 
-НЕ расщепляй, когда предмет и покупатель одни, а различается лишь стадия пути или форма запроса.
-Один и тот же человек по одному и тому же делу спрашивает «что такое X», «X best practices», «X tool»,
-«X pricing», «X alternatives», «как починить X», «X курс» — это ОДНА работа, и разбивать её на
-«определения», «инструменты», «обучение» и «диагностику» нельзя. Так же не расщепляй по платформе,
-по языку и по синониму одного и того же предмета.
+Do NOT split when the subject and buyer are the same and only the journey stage or query shape differs.
+The same person about the same job asks "what is X", "X best practices", "X tool",
+"X pricing", "X alternatives", "how to fix X", "X course" — that is ONE job, and splitting it into
+"definitions", "tools", "learning", and "diagnostics" is not allowed. Likewise do not split by platform,
+by language, or by a synonym of the same subject.
 
-Если кластер про одну работу — верни его как есть одной группой и coherent: true. Если склеен — раздели
-на группы, каждая из которых одна работа. Обычно склеенный кластер даёт две-три группы; если групп
-выходит больше четырёх, скорее всего ты режешь по стадии пути, а не по работе — вернись к одной группе.
-Фразы, не относящиеся ни к одной работе, клади в группу с name "прочее".
-Каждая фраза входит ровно в одну группу, дословно из входного списка, ничего не выдумывай.
+If the cluster is about one job, return it as-is as a single group with coherent: true. If it is glued — divide it
+into groups, each of which is one job. A glued cluster usually yields two or three groups; if more than four
+groups come out, you are most likely cutting by journey stage, not by job — go back to one group.
+Phrases that belong to no job go into the group with name "other".
+Each phrase belongs to exactly one group, verbatim from the input list; invent nothing.
 
-intent и product_shape у групп — такие же, как у исходного кластера, если работа та же самая.
-Меняй их только когда группа действительно про другое: например, группа целиком про «что такое X»
-становится informational, а группа про наём подрядчика — service. Группа, где есть «X tool»,
-«X software», «X checker», informational быть не может.
+The groups' intent and product_shape are the same as the original cluster's, as long as the job is the same.
+Change them only when a group is truly about something else: for example, a group entirely about "what is X"
+becomes informational, and a group about hiring a contractor becomes service. A group containing "X tool",
+"X software", "X checker" cannot be informational.
 
-Отвечай только JSON: {"coherent": true|false, "groups":[{"name":"...","job":"...","product_shape":"...",
+Reply with JSON only: {"coherent": true|false, "groups":[{"name":"...","job":"...","product_shape":"...",
 "intent":"...","head_phrase":"...","phrases":["..."]}]}.
-name — короткое английское имя работы (3–6 слов), job — одно предложение по-русски."""
+name is a short English job name (3–6 words), job is one sentence in Russian."""
 
 
 def split_cluster(run_id, cluster, choice, root, who, *, min_phrases, sample, max_groups=4):
-    """Расщепить кластер, если в нём несколько работ. Возвращает список кластеров.
+    """Split a cluster that holds several jobs. Returns a list of clusters.
 
-    Скептик ловил склейку в четырёх кластерах из восьми разобранных 22 сентября — но ловил
-    в самом конце, после того как на кластер потрачены замеры и проверка, и вердикт сводился
-    к «цифры посчитаны по смеси». Здесь тот же вопрос задаётся сразу после кластеризации,
-    где он стоит один дешёвый вызов и где ответ ещё может изменить, что мы измеряем.
+    The skeptic caught glue in four of the eight clusters reviewed on September 22 — but caught it
+    at the very end, after the cluster had already consumed measurements and review, and the verdict
+    reduced to "the numbers were computed over a mixture". Here the same question is asked right after
+    clustering, where it costs one cheap call and the answer can still change what we measure.
 
-    Ошибка модели не должна стоить кластера: при обрыве, неполном ответе или потере фраз
-    исходный кластер возвращается нетронутым.
+    A model error must not cost the cluster: on a truncated, incomplete reply, or lost phrases,
+    the original cluster is returned untouched.
     """
     phrases = cluster.get("phrases") or []
     if len(phrases) < 2 * min_phrases:
         return [cluster]
-    # Выборка с шагом, а не первые N: список приходит отсортированным, и первые 120 фраз
-    # из 399 — это один алфавитный угол кластера. Кластер «media kit» так и не расщеплялся,
-    # хотя скептик находил в нём три работы: модель просто не видела остальных двух третей.
+    # A strided sample, not the first N: the list arrives sorted, and the first 120 phrases
+    # of 399 are one alphabetical corner of the cluster. The "media kit" cluster never split
+    # even though the skeptic found three jobs in it: the model simply never saw the other two thirds.
     step = max(1, (len(phrases) + sample - 1) // sample)
     shown = phrases[::step][:sample]
     messages = [{"role": "system", "content": SPLIT_SYSTEM},
                 {"role": "user", "content": json.dumps({"name": cluster.get("name"), "job": cluster.get("job"),
                                                         "phrases": shown}, ensure_ascii=False)}]
     try:
-        # temperature=0: расщепление меняет состав кластеров, а значит и то, что мы измеряем.
-        # На одном и том же кластере ответ не должен плавать от прогона к прогону.
+        # temperature=0: splitting changes the composition of clusters, and therefore what we measure.
+        # On the same cluster, the answer must not drift from run to run.
         parsed, source_id, _ = ask_json(run_id, "cluster-split", messages, model_choice=choice,
                                         temperature=0, root=root, who=who)
     except (TruncatedReply, LLMError):
@@ -269,21 +269,21 @@ def split_cluster(run_id, cluster, choice, root, who, *, min_phrases, sample, ma
         if len(fresh) < min_phrases:
             continue
         taken.update(fresh)
-        # Пропущенные моделью поля наследуются от родителя, а не берутся из умолчаний _clean:
-        # иначе подкластер тихо становится informational и падает на гейте интента за то,
-        # что модель не повторила поле, — вердикт не про нишу, а про форму ответа.
+        # Fields the model omitted inherit from the parent, not from _clean's defaults:
+        # otherwise a subcluster quietly becomes informational and fails the intent gate because
+        # the model did not repeat the field — a verdict about the reply shape, not about the niche.
         for field in ("intent", "product_shape"):
             if not group.get(field) or group.get(field) == cluster.get(field):
                 cleaned[field] = cluster.get(field, cleaned[field])
         out.append({**cluster, **cleaned, "phrases": fresh,
                     "head_phrase": better_head(cleaned["head_phrase"], fresh),
                     "split_from": cluster.get("name"), "source_id": source_id})
-    # Слишком дробное расщепление — признак резки по стадии пути, а не по работе: на проверке
-    # чистый кластер «email deliverability» разваливался на семь частей вида «определения»,
-    # «инструменты», «обучение». Такой ответ отбрасывается целиком.
+    # Too fine a split is a sign of cutting by journey stage, not by job: in review, a clean
+    # "email deliverability" cluster fell apart into seven pieces like "definitions",
+    # "tools", "learning". Such a reply is discarded entirely.
     if len(out) > int(max_groups):
         return [cluster]
-    # Расщепление, потерявшее больше половины показанных фраз, — не расщепление, а потеря данных.
+    # A split that lost more than half the shown phrases is not a split but data loss.
     if len(out) < 2 or len(taken) < len(shown) // 2:
         return [cluster]
     _assign_rest([p for p in phrases if p not in taken], out)
@@ -293,11 +293,12 @@ def split_cluster(run_id, cluster, choice, root, who, *, min_phrases, sample, ma
 
 
 def _assign_rest(rest, groups):
-    """Фразы вне выборки — в ближайшую по словам группу, а не в мусор.
+    """Phrases outside the sample go to the closest group by words, not to the trash.
 
-    Модели показывается выборка (120 фраз из 399), и раньше всё, что в неё не попало, просто
-    исчезало: кластер «media kit» после расщепления терял три четверти фраз, и объём считался
-    уже не по нему. Родство меряется долей общих слов с фразами группы.
+    The model is shown a sample (120 phrases of 399), and previously everything that did not make it
+    simply disappeared: the "media kit" cluster lost three quarters of its phrases after splitting,
+    and the volume was no longer computed over it. Affinity is measured as the share of shared words
+    with the group's phrases.
     """
     if not rest or not groups:
         return
@@ -308,25 +309,25 @@ def _assign_rest(rest, groups):
         best = max(range(len(groups)), key=lambda i: scores[i])
         if scores[best] > 0:
             groups[best]["phrases"].append(phrase)
-            # Словарь не растёт по ходу раздачи: иначе первая же группа набирает случайных слов
-            # и начинает притягивать к себе всё подряд. Родство меряется только по тем фразам,
-            # которые в группу положила модель.
+            # The vocabulary does not grow while distributing: otherwise the first group collects random words
+            # and starts attracting everything to itself. Affinity is measured only over the phrases
+            # the model placed into the group itself.
 
 
-MERGE_SYSTEM = """Тебе дан список кластеров задач из разных партий фраз. Объедини дубликаты: кластеры про одну и ту же работу
-покупателя. Отвечай только JSON: {"groups":[{"name":"...","job":"...","product_shape":"...","intent":"...","members":[индексы]}]}.
-Каждый индекс входит ровно в одну группу. Не объединяй разные работы только потому, что они про одну платформу."""
+MERGE_SYSTEM = """You are given a list of job clusters from different phrase batches. Merge duplicates: clusters about the same buyer
+job. Reply with JSON only: {"groups":[{"name":"...","job":"...","product_shape":"...","intent":"...","members":[indices]}]}.
+Each index belongs to exactly one group. Do not merge different jobs just because they are about the same platform."""
 
 
 def _merge(run_id, clusters, choice, root, who, *, window=60, min_window=10):
-    """Слияние окнами, а не одним вызовом на весь список.
+    """Merging by windows, not one call over the whole list.
 
-    Прогон creator-marketing-2026-09-22 упал здесь: 141 кластер в одном запросе, и ответ
-    обрезало на лимите вывода в 8000 токенов. Основной проход давно умеет делить порцию
-    пополам, а слияние — нет, поэтому весь прогон вставал на стадии кластеризации.
+    The creator-marketing-2026-09-22 run died here: 141 clusters in one request, and the reply
+    was cut at the 8000-token output limit. The main pass has long known how to halve a batch,
+    but merging did not, so the whole run stalled at the clustering stage.
 
-    Окно режет список на части, второй проход ловит дубликаты, оказавшиеся в разных частях.
-    Проходов не больше трёх: дальше список уже не сокращается, а вызовы стоят.
+    A window cuts the list into parts; a second pass catches duplicates that landed in different parts.
+    No more than three passes: after that the list no longer shrinks and the calls cost money.
     """
     source_ids = []
     for _ in range(3):
@@ -394,11 +395,11 @@ TOOL_SHAPED = {"checker", "calculator", "validator", "generator", "converter", "
 
 
 def heuristic_clusters(records, config):
-    """Кластеризация без модели: общая «сердцевина» фразы после снятия модификаторов.
+    """Clustering without a model: the common "core" of a phrase after stripping modifiers.
 
-    records — записи стадии разворота (phrase, source, operator) или просто строки. Намерение и головная
-    фраза считаются только по фразам из autocomplete: операторные фразы («seed checker») — наши
-    заготовки, а не наблюдённый спрос, и голосовать не должны. Помечено method=heuristic.
+    records — expand-stage records (phrase, source, operator) or plain strings. Intent and head
+    phrase are computed only over autocomplete phrases: operator phrases ("seed checker") are our
+    templates, not observed demand, and must not vote. Marked method=heuristic.
     """
     rows = [r if isinstance(r, dict) else {"phrase": r, "source": "autocomplete", "operator": "autocomplete"} for r in records]
     groups = {}
@@ -417,7 +418,7 @@ def heuristic_clusters(records, config):
         head = min(observed, key=lambda m: (len(m["phrase"].split()),
                                             0 if any(w in COMMERCIAL | TOOL_SHAPED for w in m["phrase"].lower().split()) else 1,
                                             len(m["phrase"])))["phrase"]
-        out.append({"name": key.title()[:80], "job": f"Задача вокруг «{key}» (эвристическая группировка, без модели)",
+        out.append({"name": key.title()[:80], "job": f"Jobs around \"{key}\" (heuristic grouping, no model)",
                     "product_shape": shape, "intent": intent, "head_phrase": head,
                     "phrases": sorted({m["phrase"] for m in members}), "observed_phrases": len(observed),
                     "source_id": None, "method": "heuristic"})
@@ -477,8 +478,8 @@ def run(folder, config, themes, *, root, method="llm"):
 
 
 def summary_text(summary):
-    text = (f"{summary['clusters']} кластеров из {summary['phrases_clustered']} фраз; "
-            f"уже в бэклоге {summary['already_in_backlog']}; токенов {summary['tokens'].get('total_tokens', 0)}")
+    text = (f"{summary['clusters']} clusters from {summary['phrases_clustered']} phrases; "
+            f"already in backlog {summary['already_in_backlog']}; tokens {summary['tokens'].get('total_tokens', 0)}")
     if summary.get("method") == "heuristic":
-        text += f"; ВНИМАНИЕ: кластеризация эвристическая без модели ({summary.get('llm_error') or 'метод задан явно'})"
+        text += f"; WARNING: clustering is heuristic without a model ({summary.get('llm_error') or 'method set explicitly'})"
     return text

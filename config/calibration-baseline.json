@@ -7,5 +7,5 @@
     -0.509,
     0.359
   ],
-  "note": "Медиана падения спроса по контрольной выборке живых self-serve ниш. Гейт тренда судит кластер относительно этого числа, а не нуля."
+  "note": "Median demand decline across the control sample of live self-serve niches. The trend gate judges a cluster relative to this number, not to zero."
 }

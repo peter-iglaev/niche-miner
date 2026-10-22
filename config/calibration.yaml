@@ -1,27 +1,27 @@
-# Контрольная выборка для калибровки гейтов (положительный контроль).
+# Control sample for gate calibration (positive control).
 #
-# Здесь собраны ниши, про которые заранее известно, что это живой self-serve бизнес:
-# продукт покупают картой по подписке порядка $9–49/мес, покупатель приходит сам через поиск,
-# а не через отдел продаж, и у ниши есть несколько независимых платных игроков.
+# These are niches known in advance to be live self-serve businesses:
+# the product is bought by card on a subscription of about $9–49/mo, the buyer arrives on their own via search,
+# not through a sales department, and the niche has several independent paid players.
 #
-# Это не гипотезы для проверки. Это эталон для прибора: пайплайн, который отвергает
-# большинство строк этого файла, ничего не говорит про рынок — он говорит про свои пороги.
-# Ноль на выходе прогона доказателен только после того, как контроль проходит.
+# These are not hypotheses to verify. This is the reference for the instrument: a pipeline that rejects
+# most lines of this file says nothing about the market — it says something about its own thresholds.
+# A zero at a run's output is meaningful only after the control passes.
 #
-# Фразы имитируют то, что порождает стадия разворота: головная фраза, вопросы, модификаторы
-# (api, software, tool, free), формы инструмента и коммерческие хвосты (alternatives, pricing).
-# Запускается: python3 -B scripts/calibrate.py --run calib-<дата>
+# The phrases imitate what the expand stage produces: the head phrase, questions, modifiers
+# (api, software, tool, free), tool shapes, and commercial tails (alternatives, pricing).
+# Invoked by: python3 -B scripts/calibrate.py --run calib-<date>
 #
-# Файл описывает две выборки. `niches` — положительный контроль, он должен проходить целиком.
-# `negative` — то, что обязано отсеиваться, и каждая строка целится в своё правило: гейт,
-# пропускающий всё, не прибор, а решето. Калибровка считает обе стороны: сколько живых ниш
-# прошло и сколько мёртвых не прошло.
+# The file describes two samples. `niches` — the positive control, it must pass entirely.
+# `negative` — what must be screened out, and each line targets its own rule: a gate
+# that lets everything through is not an instrument but a sieve. Calibration counts both sides: how many live niches
+# passed and how many dead ones failed.
 schema_version: '1.0'
 
 niches:
   - id: uptime-monitoring
     name: uptime monitoring
-    why: UptimeRobot, BetterStack, Pingdom, Hyperping — публичные планы $7–29/мес, регистрация картой без разговора с продавцом
+    why: UptimeRobot, BetterStack, Pingdom, Hyperping — public plans $7–29/mo, card signup without talking to a salesperson
     intent: commercial
     product_shape: tool
     head_phrase: uptime monitoring
@@ -49,7 +49,7 @@ niches:
 
   - id: cron-job-monitoring
     name: cron job monitoring
-    why: Cronitor, Healthchecks.io, Cronhub — $5–30/мес, самообслуживание, узкая техническая задача
+    why: Cronitor, Healthchecks.io, Cronhub — $5–30/mo, self-serve, a narrow technical job
     intent: tool_shaped
     product_shape: tool
     head_phrase: cron job monitoring
@@ -73,7 +73,7 @@ niches:
 
   - id: screenshot-api
     name: screenshot api
-    why: Urlbox, ScreenshotOne, ApiFlash — $9–49/мес за объём скриншотов, чистое самообслуживание
+    why: Urlbox, ScreenshotOne, ApiFlash — $9–49/mo for screenshot volume, pure self-serve
     intent: tool_shaped
     product_shape: tool
     head_phrase: screenshot api
@@ -96,7 +96,7 @@ niches:
 
   - id: pdf-generation-api
     name: pdf generation api
-    why: DocRaptor, PDFMonkey, Api2Pdf, PDFShift — подписка $19–49/мес, покупает разработчик сам
+    why: DocRaptor, PDFMonkey, Api2Pdf, PDFShift — $19–49/mo subscription, the developer buys it themselves
     intent: tool_shaped
     product_shape: tool
     head_phrase: pdf generation api
@@ -118,7 +118,7 @@ niches:
 
   - id: email-verification
     name: email verification api
-    why: ZeroBounce, NeverBounce, Emailable — пакеты и подписки от $15, покупка картой без продавца
+    why: ZeroBounce, NeverBounce, Emailable — packages and subscriptions from $15, card purchase without a salesperson
     intent: commercial
     product_shape: tool
     head_phrase: email verification
@@ -140,7 +140,7 @@ niches:
 
   - id: form-backend
     name: form backend
-    why: Formspree, Basin, Getform — $8–29/мес, покупатель приходит из поиска «form backend for static site»
+    why: Formspree, Basin, Getform — $8–29/mo, the buyer arrives from the search "form backend for static site"
     intent: tool_shaped
     product_shape: tool
     head_phrase: form backend
@@ -161,7 +161,7 @@ niches:
 
   - id: status-page
     name: status page
-    why: Instatus, Statuspage, BetterStack — $10–49/мес, самостоятельная регистрация
+    why: Instatus, Statuspage, BetterStack — $10–49/mo, self-service signup
     intent: commercial
     product_shape: tool
     head_phrase: status page
@@ -182,7 +182,7 @@ niches:
 
   - id: transactional-email-api
     name: transactional email api
-    why: Postmark, Resend, Mailgun — $15–50/мес на малых объёмах, разработчик подключает сам
+    why: Postmark, Resend, Mailgun — $15–50/mo at low volumes, the developer connects it themselves
     intent: tool_shaped
     product_shape: tool
     head_phrase: transactional email api
@@ -203,7 +203,7 @@ niches:
 
   - id: appointment-scheduling
     name: appointment scheduling software
-    why: Calendly, Acuity, Cal.com — $10–20/мес на пользователя, покупает не инженер, а владелец практики или менеджер
+    why: Calendly, Acuity, Cal.com — $10–20/mo per user, bought not by an engineer but by a practice owner or a manager
     intent: commercial
     product_shape: tool
     head_phrase: appointment scheduling software
@@ -224,7 +224,7 @@ niches:
 
   - id: invoicing-software
     name: invoicing software for freelancers
-    why: Invoice Ninja, Wave, Bonsai, FreshBooks — $9–30/мес, покупатель-фрилансер платит картой
+    why: Invoice Ninja, Wave, Bonsai, FreshBooks — $9–30/mo, the freelancer buyer pays by card
     intent: commercial
     product_shape: tool
     head_phrase: invoicing software
@@ -243,11 +243,11 @@ niches:
       - invoice and time tracking software
       - send invoice online
 
-# Второе расширение выборки (22 сентября 2026). Первые десять ниш показали направление
-# ошибки, но на пороги вроде min_volume_sum десяти точек мало: он стоял на одном наблюдении.
+# Second sample extension (September 22, 2026). The first ten niches showed the direction
+# of the error, but for thresholds like min_volume_sum ten points are too few: it stood on one observation.
   - id: url-shortener-analytics
     name: link shortener with analytics
-    why: Dub, Short.io, Rebrandly, Bitly — $9–39/мес, регистрация картой
+    why: Dub, Short.io, Rebrandly, Bitly — $9–39/mo, card signup
     intent: commercial
     product_shape: tool
     head_phrase: link shortener
@@ -268,7 +268,7 @@ niches:
 
   - id: esignature
     name: electronic signature software
-    why: SignWell, Dropbox Sign, Documenso — $10–30/мес, малый бизнес платит картой
+    why: SignWell, Dropbox Sign, Documenso — $10–30/mo, small business pays by card
     intent: commercial
     product_shape: tool
     head_phrase: electronic signature software
@@ -288,7 +288,7 @@ niches:
 
   - id: time-tracking
     name: time tracking software
-    why: Toggl, Clockify, Harvest — $9–20 на пользователя, самообслуживание
+    why: Toggl, Clockify, Harvest — $9–20 per user, self-serve
     intent: commercial
     product_shape: tool
     head_phrase: time tracking software
@@ -308,7 +308,7 @@ niches:
 
   - id: survey-form-builder
     name: online survey tool
-    why: Typeform, Tally, Fillout — $25–50/мес, покупатель-маркетолог платит сам
+    why: Typeform, Tally, Fillout — $25–50/mo, the marketer buyer pays themselves
     intent: commercial
     product_shape: tool
     head_phrase: online survey tool
@@ -328,7 +328,7 @@ niches:
 
   - id: background-removal-api
     name: background removal api
-    why: remove.bg, Photoroom, Slazzer — пакеты кредитов и подписки $9–49, покупает разработчик или магазин
+    why: remove.bg, Photoroom, Slazzer — credit packs and subscriptions $9–49, bought by a developer or a store
     intent: tool_shaped
     product_shape: tool
     head_phrase: background removal api
@@ -346,7 +346,7 @@ niches:
 
   - id: document-ocr-api
     name: document parsing api
-    why: Mindee, Nanonets, Veryfi — подписки от $29, разработчик подключает сам
+    why: Mindee, Nanonets, Veryfi — subscriptions from $29, the developer connects it themselves
     intent: tool_shaped
     product_shape: tool
     head_phrase: document parsing api
@@ -365,7 +365,7 @@ niches:
 
   - id: api-monitoring
     name: api monitoring
-    why: Checkly, Treblle, Assertible — $20–50/мес, разработчик покупает без отдела закупок
+    why: Checkly, Treblle, Assertible — $20–50/mo, a developer buys without a procurement department
     intent: tool_shaped
     product_shape: tool
     head_phrase: api monitoring
@@ -384,7 +384,7 @@ niches:
 
   - id: shared-inbox
     name: shared inbox software
-    why: Help Scout, Front, Missive — $15–25 на пользователя, покупает владелец малого бизнеса
+    why: Help Scout, Front, Missive — $15–25 per user, bought by a small business owner
     intent: commercial
     product_shape: tool
     head_phrase: shared inbox software
@@ -401,13 +401,13 @@ niches:
       - support ticket software small business
       - gmail shared inbox tool
 
-# Отрицательный контроль: каждая строка обязана получить отказ, и в expect_rule написано,
-# по какому именно правилу. Отказ по другому правилу — тоже повод разобраться: значит,
-# прибор ловит верно, но не тем, чем мы думаем.
+# Negative control: every line must be rejected, and expect_rule states
+# by exactly which rule. A rejection by a different rule is also worth investigating: it means
+# the instrument catches correctly, but not by the means we assumed.
 negative:
   - id: flash-player
     name: adobe flash player
-    why: Технология мертва с 2020 года; спрос обязан падать быстрее фона
+    why: The technology has been dead since 2020; demand must decline faster than the baseline
     expect_rule: min_trend_yoy_vs_baseline
     intent: commercial
     product_shape: tool
@@ -424,7 +424,7 @@ negative:
 
   - id: windows-phone-development
     name: windows phone app development
-    why: Платформа закрыта; и спроса нет, и падение продолжается
+    why: The platform is shut down; there is no demand, and the decline continues
     expect_rule: min_volume_sum
     intent: commercial
     product_shape: tool
@@ -439,7 +439,7 @@ negative:
 
   - id: what-is-kubernetes
     name: what is kubernetes
-    why: Чисто определительный спрос — объём огромный, платить не за что
+    why: Purely definitional demand — huge volume, nothing to pay for
     expect_rule: intent
     intent: informational
     product_shape: content
@@ -456,7 +456,7 @@ negative:
 
   - id: erp-implementation
     name: erp implementation services
-    why: "Внедрение за сотни тысяч с отделом продаж: ставка обязана вылететь за верх полосы self_serve"
+    why: "Implementation for hundreds of thousands with a sales department: the bid must fly above the top of the self_serve band"
     expect_rule: cpc_band
     intent: commercial
     product_shape: tool
@@ -472,7 +472,7 @@ negative:
 
   - id: free-image-resizer
     name: free image resizer
-    why: "За клик никто не платит: ставка обязана упасть ниже нижней границы полосы"
+    why: "Nobody pays for a click: the bid must fall below the band's lower boundary"
     expect_rule: cpc_band
     intent: tool_shaped
     product_shape: tool
@@ -489,7 +489,7 @@ negative:
 
   - id: custom-software-development
     name: custom software development company
-    why: Заказная разработка с отделом продаж — покупают человекочасы, а не продукт
+    why: Custom development with a sales department — person-hours are bought, not a product
     expect_rule: services_shaped
     intent: commercial
     product_shape: tool
@@ -506,7 +506,7 @@ negative:
 
   - id: silverlight-plugin
     name: microsoft silverlight plugin
-    why: Технология снята с поддержки в 2021; остаточный спрос обязан падать быстрее фона
+    why: The technology was dropped from support in 2021; residual demand must decline faster than the baseline
     expect_rule: min_trend_yoy_vs_baseline
     intent: commercial
     product_shape: tool
@@ -522,7 +522,7 @@ negative:
 
   - id: rss-reader-for-symbian
     name: rss reader for symbian
-    why: "Мёртвая платформа и микроспрос: объём обязан не дотянуть до порога"
+    why: "A dead platform and a tiny volume: the volume must not reach the threshold"
     expect_rule: min_volume_sum
     intent: commercial
     product_shape: tool

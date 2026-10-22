@@ -1,19 +1,19 @@
-# Задания приложения
+# Application assignments
 
-Здесь можно хранить описания пользовательских задач. Само наличие файла не является разрешением его выполнить.
+User task descriptions can be stored here. The mere presence of a file is not permission to execute it.
 
-Каждое исследовательское задание должно описывать:
+Every research assignment must describe:
 
-- цель и требуемый результат;
-- область поиска либо идентификаторы существующих кандидатов;
-- ограничения и подтверждённые предпочтения пользователя;
-- доступный бюджет работы и условие остановки;
-- необходимые доказательства и критерии приёмки.
+- the objective and required outcome;
+- the search area or identifiers of existing candidates;
+- constraints and confirmed user preferences;
+- the available work budget and stopping condition;
+- the required evidence and acceptance criteria.
 
-Не задавайте обязательную для всех запусков численность кандидатов, отраслей, работников или фиксированную воронку. Корневой агент выбирает задания и зависимости по конкретной цели, а фактическое исполнение и результаты сохраняет в `runs/<run-id>/`.
+Do not prescribe a mandatory-for-all-runs count of candidates, industries, workers, or a fixed funnel. The root agent derives assignments and dependencies from the concrete objective, and stores the actual execution and results in `runs/<run-id>/`.
 
-Действующее постоянное задание пользователя лежит в [standing-objective.md](standing-objective.md):
-широкий поиск (`mining`) по отраслям покупателей. Файл описывает цель, охват, условие
-остановки, бюджет и критерии приёмки; он не создаёт прогон сам по себе.
+The user's current standing objective is in [standing-objective.md](standing-objective.md):
+a broad search (`mining`) across buyer industries. The file describes the objective, scope, stopping
+condition, budget, and acceptance criteria; it does not create a run by itself.
 
-Во время текущей разработки рыночные задания не выполняются. Для исследования требуется отдельный пользовательский запрос. Тестовые описания и данные явно помечаются как синтетические.
+During the current development, no market assignments are executed. Research requires a separate user request. Test descriptions and data are explicitly marked as synthetic.
