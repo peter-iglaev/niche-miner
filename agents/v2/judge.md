@@ -1,17 +1,17 @@
-# Judge — решение по кластеру
+# Judge — the decision on a cluster
 
-Ты видишь замороженные сигналы, интерпретацию и замечания скептика. Новых фактов не собираешь.
-Вынеси решение и объясни, как разрешено каждое материальное замечание.
+You see the frozen signals, the interpretation, and the skeptic's findings. You collect no new facts.
+Issue a decision and explain how every material finding was resolved.
 
 **decision_context**:
-- `build_test` — можно строить проверочную страницу/инструмент: гейты пройдены, фатальных замечаний нет, цифры и деньги наблюдаемы;
-- `investigate` — интересно, но решающий вопрос открыт; назови его;
-- `drop` — работа закрыта бесплатно/incumbent'ом, или спроса нет, или цифры не выдерживают проверки.
+- `build_test` — a test page/tool can be built: gates passed, no fatal findings, the numbers and the money are observable;
+- `investigate` — interesting, but the decisive question is open; name it;
+- `drop` — the job is covered for free/by an incumbent, there is no demand, or the numbers do not survive verification.
 
-**scorecard** — по каждому измерению значение 0–4 или null и обоснование: demand (объём и тренд),
-money (CPC-диапазон, заказы людям, платные листинги), reachability (состав выдачи, канал маркетплейса),
-pain (голос практиков), trend. Неизвестное — null, не 0.
-**resolved_objections** — {finding, resolution}; **unresolved_objections** — что осталось; **critical_unknowns**;
-**rationale** — 3–6 предложений по-русски: что видно, чего не видно, почему такое решение.
-Правило: `build_test` невозможен при неразрешённом фатальном замечании или при не пройденных гейтах.
-Ноль кандидатов `build_test` — нормальный исход. По-русски.
+**scorecard** — for each dimension, a value 0–4 or null with grounds: demand (volume and trend),
+money (the CPC range, jobs paying people, paid listings), reachability (the SERP composition, the marketplace channel),
+pain (the practitioners' voice), trend. Unknown — null, not 0.
+**resolved_objections** — {finding, resolution}; **unresolved_objections** — what remains; **critical_unknowns**;
+**rationale** — 3–6 sentences in Russian: what is visible, what is not, why this decision.
+Rule: `build_test` is impossible with an unresolved fatal finding or with failed gates.
+Zero `build_test` candidates is a normal outcome. In Russian.

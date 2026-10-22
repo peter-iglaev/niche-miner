@@ -1,102 +1,102 @@
-# Досье доказательств
+# Evidence dossier
 
-> Заполняется по собранным данным. Этот шаблон не является выполненным исследованием. Неизвестное, не собранное и отрицательное — разные результаты.
+> Filled from collected data. This template is not a completed research. Unknown, not collected, and negative are different outcomes.
 
-## Задача и происхождение
+## Job and provenance
 
-- Run и идентификатор кандидата:
-- Цель пользовательского запроса и границы вывода:
-- Автор обнаружения:
-- Авторы исследований, Skeptic и независимый Judge:
-- Принятые назначения/попытки и их хеши:
-- Канонический hypothesis.json и реестр claims.jsonl:
+- Run and candidate identifier:
+- Objective of the user request and boundaries of the conclusion:
+- Discovery author:
+- Research authors, Skeptic, and the independent Judge:
+- Accepted assignments/attempts and their hashes:
+- The canonical hypothesis.json and the claims.jsonl registry:
 
-## Рабочий процесс
+## Workflow
 
-- Кто выполняет работу и кто владеет бюджетом:
-- Отрасль, страна/регуляторный контекст и границы сегмента:
-- Триггер, точная задача и текущий обходной путь:
-- Подтверждённые последствия на один случай:
-- Частота и неопределённость:
-- Желаемый измеримый результат; исходное значение только при наличии источника:
+- Who performs the work and who owns the budget:
+- Industry, country/regulatory context, and segment boundaries:
+- Trigger, exact job, and current workaround:
+- Confirmed consequences per occurrence:
+- Frequency and uncertainty:
+- Desired measurable outcome; a baseline value only with a source:
 
-## Утверждения и наблюдения
+## Claims and observations
 
-| ID утверждения | Проверяемый факт | Наблюдение / точный фрагмент | URL, тип и дата доступа | Прямота, надёжность и ограничения | Поддерживает / противоречит / уточняет |
+| Claim ID | Checkable fact | Observation / exact locator | URL, type, and access date | Directness, reliability, and limitations | Supports / contradicts / qualifies |
 |---|---|---|---|---|---|
 
-- Повторяющиеся первоисточники и идентичность покупателей:
-- Актуальность и соответствие целевому сегменту:
-- Для чисел: единицы, валюта, период, география, метод и исходные утверждения:
+- Repeated primary sources and buyer identity:
+- Recency and match with the target segment:
+- For numbers: units, currency, period, geography, method, and underlying claims:
 
-Прямое наблюдение цены подтверждает предложение. Утверждение об оплате требует доказательства оплаты; надёжность источника оценивается отдельно от прямоты связи.
+Direct observation of a price establishes an offer. A payment claim requires evidence of payment; source reliability is assessed separately from the directness of the link.
 
-## Оплата
+## Payment
 
-- Точные расходы на задачу: кто платит, за что, форма расходов и утверждения:
-- Смежные расходы и явная связь с задачей/бюджетом:
-- Объявленные цены, условия и источники:
-- Подтверждённое платное использование, независимые покупатели и первоисточники:
-- Payment Confidence 0–5 или неизвестно, основания:
-- Риск переноса бюджета на новый продукт:
-- Противоположные наблюдения и пробелы:
+- Exact spending on the job: who pays, for what, the form of spending, and the claims:
+- Adjacent spending and its explicit link to the job/budget:
+- Published prices, terms, and sources:
+- Confirmed paid use, independent buyers, and primary sources:
+- Payment Confidence 0–5 or unknown, grounds:
+- The risk of budget shifting to a new product:
+- Opposing observations and gaps:
 
-Недовольство относится к смене решения, а не повышает само по себе доказанность оплаты.
+Dissatisfaction relates to switching, and does not by itself strengthen payment evidence.
 
-## Спрос и поиск
+## Demand and search
 
-- Доказательства повторяемости задачи и последствий:
-- Сообщения практиков и ограничения выборки:
-- Точные и смежные поисковые запросы:
-- Реально возвращённые метрики либо no_data/not_collected с причиной:
-- Параметры, провайдер, дата и ссылка на исходный ответ:
-- Неуспешные поиски и ограничения доступа:
+- Evidence of job recurrence and consequences:
+- Practitioner posts and sampling limitations:
+- Exact and adjacent search queries:
+- Metrics actually returned, or no_data/not_collected with the reason:
+- Parameters, provider, date, and reference to the raw response:
+- Failed searches and access limitations:
 
-Поисковые объёмы и CPC не доказывают оплату продукта.
+Search volumes and CPC do not prove product payment.
 
-## Альтернативы и смена решения
+## Alternatives and switching
 
-- Прямые продукты, смежные пакеты, ручной процесс и бесплатные альтернативы:
-- Подтверждённые условия и охват задачи:
-- Проблемы альтернатив и наблюдения о готовности их сменить:
-- Возможная узкая часть продукта — явно обозначенная гипотеза:
-- Издержки перехода и противоположные доказательства:
+- Direct products, adjacent bundles, manual processes, and free alternatives:
+- Confirmed terms and job coverage:
+- Problems of the alternatives and observations of willingness to switch:
+- A possible narrow slice of the product — an explicitly labeled hypothesis:
+- Switching costs and counterevidence:
 
-## Дистрибуция
+## Distribution
 
-- Точный покупатель и доказательства его присутствия в канале:
-- Механизм привлечения и реальные условия доступа:
-- Нагрузка на публичность, исходящие контакты и продажи:
-- Известные затраты/трение и предположения:
-- Условие pass/fail/unknown с ID утверждений:
-- План ограниченного эксперимента и наблюдаемый критерий:
+- The exact buyer and evidence of their presence in the channel:
+- The acquisition mechanism and real terms of access:
+- The load of publicity, outbound, and sales:
+- Known costs/friction and assumptions:
+- A pass/fail/unknown condition with claim IDs:
+- A limited-experiment plan and an observable success criterion:
 
-## Реализуемость и соответствие основателю
+## Feasibility and founder fit
 
-- Продаваемая часть процесса:
-- Данные, интеграции, доступ, безопасность и регулирование:
-- Ввод в работу, сопровождение, исключения и текущая нагрузка:
-- Оценки усилий с предположениями и зависимостями:
-- Условие реализуемости pass/fail/unknown и основания:
-- Подтверждённый профиль основателя и оставшиеся неизвестные:
+- The sellable part of the process:
+- Data, integrations, access, security, and regulation:
+- Onboarding, maintenance, exceptions, and the current workload:
+- Effort estimates with assumptions and dependencies:
+- A pass/fail/unknown feasibility condition and grounds:
+- The confirmed founder profile and remaining unknowns:
 
-Соответствие основателю показывается отдельно от индексов привлекательности.
+Founder fit is shown separately from the attractiveness indices.
 
-## Независимая рецензия
+## Independent review
 
-| ID утверждений | Замечание Skeptic / конфликт | Критичность | Ответ Judge и состояние разрешения |
+| Claim IDs | Skeptic finding / conflict | Severity | Judge response and resolution status |
 |---|---|---|---|
 
-- Сильнейший аргумент против кандидата:
-- Какие наблюдения опровергнут этот аргумент:
-- Что осталось неизвестным и почему:
-- Какой дополнительный поиск был разрешён и что он изменил:
+- The strongest argument against the candidate:
+- Which observations would refute this argument:
+- What remains unknown and why:
+- Which additional search was permitted and what it changed:
 
-## Оценка и решение
+## Assessment and decision
 
-Источник — assessment.json; вычисленный результат — score.json в каталоге кандидата текущего run. decision_context: investigate либо commercial_validation. Контекст оценки определяет силу рекомендации, а не разрешение впервые собирать данные.
+The source is assessment.json; the computed result is score.json in the current run's candidate directory. decision_context: investigate or commercial_validation. The assessment context defines the strength of a recommendation, not permission to collect data for the first time.
 
-| Компонент | Оценка 0–4 / неизвестно | ID утверждений | Аргумент и ограничения |
+| Component | Rating 0–4 / unknown | Claim IDs | Argument and limitations |
 |---|---|---|---|
 | impact_per_event | | | |
 | recurring_burden | | | |
@@ -104,11 +104,11 @@
 | accessible_distribution | | | |
 | switching_opportunity | | | |
 
-- Индекс задачи:
-- Индекс бизнеса:
-- Пригодность по обязательным условиям и возможность ранжирования:
-- Неразрешённые критические противоречия:
-- Решение из манифеста: rejected / deferred / duplicate / qualified, причина и автор:
-- Следующее действие и наблюдаемый критерий результата:
+- The job index:
+- The business index:
+- Eligibility under the mandatory conditions and rankability:
+- Unresolved critical contradictions:
+- The decision from the manifest: rejected / deferred / duplicate / qualified, reason, and author:
+- The next action and an observable success criterion:
 
-Не рассчитывать смешанный рейтинг и не менять описание гипотезы ради записи решения. Отсутствие рекомендованных кандидатов допустимо. Неприменимые к узкому заданию разделы обозначаются как не исследованные, а не заполняются догадками.
+Do not compute a blended rating and do not change the hypothesis description to fit a decision. An empty recommendation list is acceptable. Sections inapplicable to a narrow assignment are marked as not researched, not filled with guesses.

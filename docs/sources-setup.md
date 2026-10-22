@@ -1,38 +1,38 @@
-# Подключение источников сигналов спроса (бесплатные)
+# Connecting demand signal sources (free)
 
-Инструкция для пайплайна v2 (`docs/demand-first-spec.md`). Всё ниже — бесплатные тиры и
-публичные API. Платные варианты упомянуты только там, где бесплатного нет, и не требуются
-для работы.
+Instructions for the v2 pipeline (`docs/demand-first-spec.md`). Everything below is free tiers and
+public APIs. Paid options are mentioned only where no free option exists, and are not required
+for operation.
 
-Пометки достоверности: **[✓]** проверено живым вызовом в сентябре 2026; **[~]** по официальной
-документации, вызов не делался; **[?]** порядок мог измениться — сверить с официальной страницей
-при подключении.
+Reliability markers: **[✓]** verified by a live call in September 2026; **[~]** from the official
+documentation, no call was made; **[?]** the procedure may have changed — check against the official page
+when connecting.
 
-## Сколько ждать: прочитать до начала
+## How long to wait: read before you start
 
-Сначала подключайте то, что работает сегодня. Ожидания ниже — не наши сроки, а Google и Microsoft.
+Connect first whatever works today. The waits below are not our timelines but Google's and Microsoft's.
 
-| Источник | Своих действий | Ожидание решения третьей стороны | Что даёт пайплайну |
+| Source | Own actions | Third-party decision wait | What it gives the pipeline |
 |---|---|---|---|
-| Ubersuggest MCP | уже подключён | нет; 3 отчёта в день, сброс по UTC | объём и CPC для 3 кластеров в день |
-| Upwork MCP, Freelancer, маркетплейсы, автокомплиты, HN | ничего или `UPWORK_ORG_UID` | нет | деньги, платный софт, достижимость |
-| Brave Search (SERP) | ключ за 5 минут | нет | достижимость выдачи |
-| DeepSeek | пополнить баланс | нет | кластеризация, проверка агентами, нарратив |
-| Telegram | бот и chat_id, 10 минут | нет | отчёт и уведомления |
-| Bing Webmaster | 15–20 минут, нужен свой домен | нет; DNS-верификация может тянуться до суток, meta-тег мгновенно | объём и CPC для всех кластеров за проход |
-| Google Ads Keyword Planner | 30–60 минут | **есть**: brand verification и одобрение Basic — Google обещает минуты, но проверка OAuth-приложения может занять **до 7 дней и больше** [?]; новый аккаунт Google Ads тоже иногда уходит «на проверку» | объём, CPC, помесячный тренд для всех кластеров |
+| Ubersuggest MCP | already connected | none; 3 reports per day, reset at UTC | volume and CPC for 3 clusters per day |
+| Upwork MCP, Freelancer, marketplaces, autocompletes, HN | nothing or `UPWORK_ORG_UID` | none | money, paid software, reachability |
+| Brave Search (SERP) | a key in 5 minutes | none | SERP reachability |
+| DeepSeek | top up the balance | none | clustering, agent verification, narrative |
+| Telegram | a bot and chat_id, 10 minutes | none | the report and notifications |
+| Bing Webmaster | 15–20 minutes, requires your own domain | none; DNS verification can stretch to a day, the meta tag is instant | volume and CPC for all clusters in one pass |
+| Google Ads Keyword Planner | 30–60 minutes | **yes**: brand verification and Basic approval — Google promises minutes, but OAuth app verification can take **up to 7 days and more** [?]; a new Google Ads account also sometimes goes "under review" | volume, CPC, monthly trend for all clusters |
 
-Вывод: Google Ads — лучший источник, но подключается «на будущее». Чтобы получить цифры сегодня,
-нужен Bing или дневная квота Ubersuggest.
+Bottom line: Google Ads is the best source, but it is connected "for the future". To get numbers today,
+you need Bing or the daily Ubersuggest quota.
 
 ---
 
-## 0. Куда класть ключи
+## 0. Where to put the keys
 
-Скрипты читают переменные окружения, а при их отсутствии — файлы `.env.local`, затем `.env` в корне
-репозитория (`scripts/env.py`). `.env.local` в git не попадает.
+The scripts read environment variables, and when absent — the `.env.local` files, then `.env` at the repo
+root (`scripts/env.py`). `.env.local` never reaches git.
 
-Формат:
+Format:
 
 ```
 DEEPSEEK_API_KEY=...
@@ -41,302 +41,301 @@ TELEGRAM_BOT_TOKEN=...
 TELEGRAM_CHAT_ID=...
 ```
 
-**Для облачных сессий Claude Code** переменные задаются один раз в настройках окружения
-(claude.ai/code → Environments → ваша среда → Environment variables), а список разрешённых доменов —
-в сетевой политике **Custom** там же. Полный список доменов — в разделе 12. Поле Setup script
-оставить пустым: зависимости ставит SessionStart-хук (`scripts/install_pkgs.sh`).
+**For Claude Code cloud sessions** the variables are set once in the environment settings
+(claude.ai/code → Environments → your environment → Environment variables), and the allow-listed domains —
+in the **Custom** network policy there as well. The full domain list is in section 12. Leave the Setup script
+field empty: dependencies are installed by the SessionStart hook (`scripts/install_pkgs.sh`).
 
-Там же задаётся `NICHE_MINER_DATA` — путь к приватному репозиторию данных (профиль, прогоны,
-бэклог), см. [`workspace.md`](workspace.md).
+Also set `NICHE_MINER_DATA` there — the path to the private data repository (profile, runs,
+backlog), see [`workspace.md`](workspace.md).
 
-Проверка всего сразу: `python3 scripts/demand.py doctor` — покажет по каждому источнику
-`available / missing key / quota left`. До появления `demand.py` — `python3 scripts/preflight.py`
-и `python3 scripts/search.py providers`.
+Check everything at once: `python3 scripts/demand.py doctor` — it will show, per source,
+`available / missing key / quota left`. Before `demand.py` exists — `python3 scripts/preflight.py`
+and `python3 scripts/search.py providers`.
 
 ---
 
-## 1. Уже подключено (проверить, что живо)
+## 1. Already connected (verify it is alive)
 
-| Источник | Переменная | Проверка | Статус |
+| Source | Variable | Check | Status |
 |---|---|---|---|
-| DeepSeek | `DEEPSEEK_API_KEY` | `python3 scripts/llm.py ping --provider deepseek --model deepseek-chat` | [✓] работает |
-| Brave Search | `BRAVE_API_KEY` | `python3 scripts/search.py providers` | [✓] работает |
-| Telegram | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | `python3 scripts/telegram.py check` | [✓] ключи есть |
-| Ubersuggest MCP | нет (OAuth в сессии) | `auth_status` из сессии Claude Code | [✓] tier free |
-| Upwork MCP | нет (OAuth в сессии) | `upwork__get_account` из сессии | [✓] подключён |
-| Contra MCP | нет (OAuth в сессии) | `auth_status` из сессии | [✓] подключён |
+| DeepSeek | `DEEPSEEK_API_KEY` | `python3 scripts/llm.py ping --provider deepseek --model deepseek-chat` | [✓] works |
+| Brave Search | `BRAVE_API_KEY` | `python3 scripts/search.py providers` | [✓] works |
+| Telegram | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | `python3 scripts/telegram.py check` | [✓] keys present |
+| Ubersuggest MCP | none (OAuth in the session) | `auth_status` from the Claude Code session | [✓] tier free |
+| Upwork MCP | none (OAuth in the session) | `upwork__get_account` from the session | [✓] connected |
+| Contra MCP | none (OAuth in the session) | `auth_status` from the session | [✓] connected |
 
-Brave: бесплатный план — около 2 000 запросов в месяц и 1 запрос в секунду [~]; в пайплайне
-уже выдерживается интервал 1,05 с. Этого хватает на проверку выдачи для ~600 кластеров в
-месяц по 2–3 фразы.
+Brave: the free plan is about 2,000 queries per month and 1 query per second [~]; the pipeline
+already keeps a 1.05 s interval. That is enough to check the SERP for ~600 clusters per
+month at 2–3 phrases each.
 
 ---
 
-## 2. Autocomplete (спрос, формулировки) — без ключей
+## 2. Autocomplete (demand, phrasings) — no keys
 
-Ничего настраивать не нужно. Эндпоинты, которые отвечают без авторизации [✓]:
+Nothing to configure. Endpoints that respond without authorization [✓]:
 
-| Источник | Вызов |
+| Source | Call |
 |---|---|
-| Google | `https://suggestqueries.google.com/complete/search?client=firefox&hl=en&gl=us&q=<фраза>` |
-| YouTube | тот же URL с `&ds=yt` |
-| Amazon | `https://completion.amazon.com/api/2017/suggestions?mid=ATVPDKIKX0DER&alias=aps&prefix=<фраза>` |
-| Shopify App Store | `https://apps.shopify.com/search/autocomplete?q=<фраза>` |
+| Google | `https://suggestqueries.google.com/complete/search?client=firefox&hl=en&gl=us&q=<phrase>` |
+| YouTube | the same URL with `&ds=yt` |
+| Amazon | `https://completion.amazon.com/api/2017/suggestions?mid=ATVPDKIKX0DER&alias=aps&prefix=<phrase>` |
+| Shopify App Store | `https://apps.shopify.com/search/autocomplete?q=<phrase>` |
 
-Правила: пауза 1–2 секунды между вызовами, при 429 — пауза 30 с и повтор один раз. Подсказки
-персонализированы по региону (`gl`), поэтому регион фиксируется в конфиге и попадает в
-sidecar источника. Чисел эти эндпоинты не дают — только формулировки.
+Rules: pause 1–2 seconds between calls; on a 429 — pause 30 s and retry once. Suggestions
+are personalized by region (`gl`), so the region is fixed in the config and lands in the
+source sidecar. These endpoints give no numbers — only phrasings.
 
-Ubersuggest `google_suggestions` (через MCP-мост) разворачивает ~60 модификаторов на ключ и
-**не расходует дневную квоту** free-аккаунта [✓]. Используется как пятый источник разворота.
-
----
-
-## 3. Ubersuggest MCP (цифры для финалистов)
-
-**Что даёт:** объём, CPC, конкуренцию рекламодателей, помесячный ряд; анализ выдачи с DA доменов.
-**Уже подключён** к сессии Claude Code через коннектор. Аккаунт `free` [✓].
-
-**Лимиты free** [✓ по ответам сервера и help-центру]: **3 отчёта в день** — общая квота с
-веб-приложением; `keyword_suggestions`, `match_keywords`, `keyword_overview` считаются отчётами.
-В `serp_analysis` отдельный счётчик «10 обновлений метрик в месяц», кэшированные ответы
-бесплатны. `google_suggestions` и `location_suggest` квоту не тратят.
-
-**Как расходовать 3 отчёта:** только на стадии «цифры», только на кластеры с лучшим отсевом, и
-только `keyword_suggestions` по родительской фразе — один такой отчёт возвращает до ~250
-ключей с объёмом и CPC [✓]. `keyword_overview` по одному ключу — расточительно.
-
-**Доступ из скриптов:** публичного REST нет. Работает только через MCP-мост (спецификация, §7):
-скрипт пишет `bridge/requests.jsonl`, оркестратор исполняет, `bridge-ingest` архивирует.
-
-**Учёт квоты:** `backlog/quota.json` — сколько отчётов пайплайн запланировал сегодня. Квота общая с
-веб-приложением, поэтому ledger может отставать от реальности: если инструмент ответил
-«You have reached the daily reports limit», `bridge --ingest` помечает день исчерпанным
-(`"exhausted": true`), а запросы получают статус `deferred_quota` и уходят на следующий день.
-Сброс квоты — по календарному дню UTC.
-
-**Платно (не требуется):** Individual — 150 отчётов в день, ~$29/мес или ~$290 разово [~].
+Ubersuggest `google_suggestions` (through the MCP bridge) expands ~60 modifiers per keyword and
+**does not spend the free account's daily quota** [✓]. Used as the fifth expansion source.
 
 ---
 
-## 4. Google Ads API → Keyword Planner (первоисточник объёмов, бесплатно)
+## 3. Ubersuggest MCP (numbers for the finalists)
 
-**Что даёт:** `avg_monthly_searches` с помесячной разбивкой за 12 месяцев, ставки
-`low/high_top_of_page_bid` (это и есть CPC), `competition` рекламодателей. Это данные, которые
-Ubersuggest, Keywords Everywhere и DataForSEO перепродают.
+**What it gives:** volume, CPC, advertiser competition, a monthly series; SERP analysis with domain DA.
+**Already connected** to the Claude Code session through a connector. Account: `free` [✓].
 
-**Сколько стоит [✓ по документации Google]:** сам API бесплатен («There is no charge for using the
-Google Ads API»), биллинг Cloud-проекта включать не нужно, аккаунт Google Ads работает без
-привязанной карты. **Но:** точные объёмы Google отдаёт только аккаунтам с активной рекламой; без
-трат `avg_monthly_searches` приходит корзинами (10, 100, 1K–10K, 10K–100K) [~ по отзывам,
-официального порога Google не публикует]. Ставки `low/high_top_of_page_bid` отдаются в любом
-случае, а именно они нужны гейту self_serve. Если корзины мешают, точные объёмы бесплатно даёт
-Bing Webmaster (раздел 5); платить за рекламу — крайний вариант.
+**Free limits** [✓ per server responses and the help center]: **3 reports per day** — a quota shared with
+the web app; `keyword_suggestions`, `match_keywords`, `keyword_overview` count as reports.
+`serp_analysis` has a separate counter of "10 metric updates per month"; cached responses
+are free. `google_suggestions` and `location_suggest` do not spend the quota.
 
-**Схема доступа с 10.09.2026 [✓ по developers.google.com]:** developer token больше не выдаётся и
-игнорируется сервером; уровень доступа привязан к **Google Cloud-проекту**, из которого выпущены
-OAuth-credentials. Manager-аккаунт (MCC) не нужен. Заявки — на странице
-`console.cloud.google.com/google/ads-apis/overview`. Для уровня **Basic** обязательна brand
-verification проекта, решение автоматическое, за минуты. `KeywordPlanIdeaService` (то, что нужно
-пайплайну) на уровне Explorer закрыт — нужен Basic.
+**How to spend the 3 reports:** only at the measure stage, only on clusters with the best screening results, and
+only `keyword_suggestions` on a parent phrase — one such report returns up to ~250
+keywords with volume and CPC [✓]. `keyword_overview` on a single keyword is wasteful.
 
-**Шаги (30–60 минут, всё бесплатно):**
+**Access from scripts:** there is no public REST API. It works only through the MCP bridge (specification, §7):
+the script writes `bridge/requests.jsonl`, the orchestrator executes it, `bridge-ingest` archives it.
 
-1. **Аккаунт Google Ads.** https://ads.google.com → создать аккаунт **без кампании** (в мастере
-   «пропустить создание кампании» / expert mode). Записать Customer ID вида `123-456-7890`.
-   Платёжные данные не нужны, пока не запускается реклама.
-2. **Google Cloud-проект.** https://console.cloud.google.com → новый проект → APIs & Services →
-   Library → **Google Ads API** → Enable. Биллинг проекта включать не нужно.
-3. **OAuth consent screen (это и есть brand verification).** APIs & Services → OAuth consent
-   screen: User type **External**; на вкладке Branding заполнить имя приложения, support email,
-   логотип и authorized domain (любой свой домен); сохранить; на странице OAuth Overview нажать
-   **Get started** — проверка идёт несколько минут; после успеха — **Publish branding** и перевести
-   Publishing status в **In production**. Без «In production» refresh token тестового пользователя
-   живёт 7 дней и пайплайн начнёт падать через неделю.
-4. **OAuth-клиент.** APIs & Services → Credentials → Create credentials → OAuth client ID → тип
-   **Desktop app** → скачать JSON (в нём `client_id` и `client_secret`).
-5. **Уровень доступа Basic.** `console.cloud.google.com/google/ads-apis/overview` → раздел
-   **Upgrade access level** → Basic. Заполнить анкету (использование: keyword research для
-   собственного проекта, без управления чужими аккаунтами). Ответ — обычно в течение часа.
-6. **Refresh token.** Один раз, на своей машине с браузером:
+**Quota accounting:** `backlog/quota.json` — how many reports the pipeline scheduled today. The quota is shared with
+the web app, so the ledger can lag reality: if the tool responds
+"You have reached the daily reports limit", `bridge --ingest` marks the day exhausted
+(`"exhausted": true`), and the requests get the status `deferred_quota` and move to the next day.
+The quota resets on the UTC calendar day.
+
+**Paid (not required):** Individual — 150 reports per day, ~$29/mo or ~$290 one-off [~].
+
+---
+
+## 4. Google Ads API → Keyword Planner (the primary volume source, free)
+
+**What it gives:** `avg_monthly_searches` with a monthly breakdown for 12 months, the
+`low/high_top_of_page_bid` bids (this is the CPC), and advertiser `competition`. This is the data that
+Ubersuggest, Keywords Everywhere, and DataForSEO resell.
+
+**What it costs [✓ per Google documentation]:** the API itself is free ("There is no charge for using the
+Google Ads API"), no Cloud project billing needed, and a Google Ads account works without an
+attached card. **But:** Google returns exact volumes only to accounts with active advertising; without
+spend, `avg_monthly_searches` arrives in buckets (10, 100, 1K–10K, 10K–100K) [~ per community reports;
+Google publishes no official threshold]. The `low/high_top_of_page_bid` bids are returned either way, and they are exactly what the self_serve gate needs. If the buckets get in the way, Bing Webmaster gives exact volumes for free
+(section 5); paying for ads is the last resort.
+
+**Access scheme since 10.09.2026 [✓ per developers.google.com]:** a developer token is no longer issued and
+is ignored by the server; the access level is tied to the **Google Cloud project** from which the
+OAuth credentials are issued. A manager account (MCC) is not needed. Applications are submitted on the page
+`console.cloud.google.com/google/ads-apis/overview`. For the **Basic** level, brand
+verification of the project is mandatory; the decision is automatic, minutes. `KeywordPlanIdeaService` (what the
+pipeline needs) is closed at the Explorer level — Basic is required.
+
+**Steps (30–60 minutes, all free):**
+
+1. **A Google Ads account.** https://ads.google.com → create an account **without a campaign** (in the wizard,
+   "skip campaign creation" / expert mode). Write down a Customer ID of the form `123-456-7890`.
+   Billing details are not needed until advertising is launched.
+2. **A Google Cloud project.** https://console.cloud.google.com → new project → APIs & Services →
+   Library → **Google Ads API** → Enable. Project billing does not need to be enabled.
+3. **OAuth consent screen (this is the brand verification).** APIs & Services → OAuth consent
+   screen: User type **External**; on the Branding tab fill in the app name, support email,
+   logo, and authorized domain (any domain of yours); save; on the OAuth Overview page click
+   **Get started** — verification takes a few minutes; after success — **Publish branding** and switch
+   Publishing status to **In production**. Without "In production", a test user's refresh token
+   lives 7 days and the pipeline will start failing after a week.
+4. **An OAuth client.** APIs & Services → Credentials → Create credentials → OAuth client ID → type
+   **Desktop app** → download the JSON (it contains `client_id` and `client_secret`).
+5. **The Basic access level.** `console.cloud.google.com/google/ads-apis/overview` → section
+   **Upgrade access level** → Basic. Fill in the questionnaire (usage: keyword research for
+   your own project, no management of other accounts). The answer usually arrives within an hour.
+6. **Refresh token.** Once, on your own machine with a browser:
    ```
    pip install google-ads
    python3 scripts/google_ads_oauth.py ~/Downloads/client_secret_*.json
    ```
-   Скрипт сам определит тип клиента и поднимет локальный сервер на подходящем адресе, откроет
-   браузер, спросит доступ к scope `https://www.googleapis.com/auth/adwords` и напечатает готовые
-   строки для `.env.local`. На экране «Google hasn't verified this app» — Advanced → Go to app.
+   The script detects the client type itself, raises a local server on a suitable address, opens the
+   browser, asks for access to the scope `https://www.googleapis.com/auth/adwords`, and prints ready-made
+   lines for `.env.local`. On the "Google hasn't verified this app" screen — Advanced → Go to app.
 
-   Два места, где это ломается, и что делать:
-   - **`redirect_uri_mismatch`.** Клиент создан как Web application, а не Desktop app. У web-клиента
-     redirect URI должен совпадать буква в букву. Либо создать новый клиент типа Desktop app, либо
-     добавить в Authorized redirect URIs строку `http://localhost:8080/` — скрипт подхватит её сам.
-   - **`pip` и `python` — разные интерпретаторы** (venv без pip, pyenv, uv). Ставить и запускать
-     нужно одним: `python3 -m pip install google-ads`, затем тем же `python3`. Проверка:
-     `python3 -c "import sys; print(sys.executable)"` и `pip -V` должны показать один путь.
-7. **Переменные** в `.env.local` (файл в .gitignore, в репозиторий не попадает):
+   Two places where this breaks, and what to do:
+   - **`redirect_uri_mismatch`.** The client was created as a Web application, not a Desktop app. A web client's
+     redirect URI must match letter for letter. Either create a new Desktop app client, or add
+     `http://localhost:8080/` to Authorized redirect URIs — the script will pick it up itself.
+   - **`pip` and `python` are different interpreters** (a venv without pip, pyenv, uv). Install and run
+     with the same one: `python3 -m pip install google-ads`, then the same `python3`. Check:
+     `python3 -c "import sys; print(sys.executable)"` and `pip -V` must show one path.
+7. **Variables** in `.env.local` (the file is in .gitignore and never reaches the repository):
    ```
    GOOGLE_ADS_CLIENT_ID=...
    GOOGLE_ADS_CLIENT_SECRET=...
    GOOGLE_ADS_REFRESH_TOKEN=...
-   GOOGLE_ADS_CUSTOMER_ID=1234567890          # без дефисов
-   GOOGLE_ADS_LOGIN_CUSTOMER_ID=              # пусто; заполнять только если есть manager-аккаунт
-   GOOGLE_ADS_DEVELOPER_TOKEN=                # пусто; старая схема, сервер игнорирует
+   GOOGLE_ADS_CUSTOMER_ID=1234567890          # without hyphens
+   GOOGLE_ADS_LOGIN_CUSTOMER_ID=              # empty; fill in only if there is a manager account
+   GOOGLE_ADS_DEVELOPER_TOKEN=                # empty; the old scheme, ignored by the server
    ```
-   В облачной сессии Claude Code те же четыре ключа задаются в настройках окружения
-   (Environment → variables) — коннектор читает и `.env.local`, и переменные процесса.
-8. **Проверка.** Библиотека `google-ads` стоит в `requirements.txt`, облачная сессия ставит её
-   сама хуком SessionStart. Запусти `python3 -B scripts/demand.py doctor` — в блоке `google_ads`
-   должно быть `"available": true`. Реальный вызов сделает стадия `measure`: она берёт Google Ads
-   первым провайдером, и Ubersuggest-мост больше не нужен.
+   In a Claude Code cloud session the same four keys are set in the environment settings
+   (Environment → variables) — the connector reads both `.env.local` and process variables.
+8. **Verification.** The `google-ads` library is in `requirements.txt`; the cloud session installs it
+   itself via the SessionStart hook. Run `python3 -B scripts/demand.py doctor` — in the `google_ads` block
+   it should say `"available": true`. The real call will be made by the `measure` stage: it takes Google Ads
+   as the first provider, and the Ubersuggest bridge is no longer needed.
 
-**Где хранить ключи для облачных прогонов:** claude.ai/code → Environments → нужная среда →
-Environment variables. Контейнер сессии временный, `.env.local` в нём не переживёт перезапуск.
-Переменные среды подхватываются при старте новой сессии. В сетевой политике среды должны быть
-`googleads.googleapis.com` и `oauth2.googleapis.com` (раздел 12).
+**Where to store keys for cloud runs:** claude.ai/code → Environments → the needed environment →
+Environment variables. The session container is temporary; `.env.local` will not survive a restart there.
+Environment variables are picked up when a new session starts. The environment's network policy must include
+`googleads.googleapis.com` and `oauth2.googleapis.com` (section 12).
 
-**Квота:** Basic — 15 000 операций в день [✓]. Хватает на тысячи фраз в день.
-**Ловушки:** Keyword Planner склеивает близкие варианты фраз и округляет; узкие запросы часто
-дают 10 или 0 — это не «нет спроса», а группировка. Поэтому в стадии «цифры» считается сумма по
-кластеру, а не число по одной фразе. Ошибка `DEVELOPER_TOKEN_NOT_APPROVED`/`PERMISSION_DENIED`
-при уровне Test или Explorer означает, что заявка на Basic ещё не одобрена.
+**Quota:** Basic — 15,000 operations per day [✓]. Enough for thousands of phrases per day.
+**Pitfalls:** Keyword Planner merges close phrase variants and rounds; narrow queries often
+return 10 or 0 — that is not "no demand" but grouping. That is why the measure stage sums over the
+cluster, not a single phrase. A `DEVELOPER_TOKEN_NOT_APPROVED`/`PERMISSION_DENIED` error
+at the Test or Explorer level means the Basic application has not been approved yet.
 
 ---
 
-## 5. Bing Webmaster Tools → Keyword Research (точные объёмы Bing, бесплатно)
+## 5. Bing Webmaster Tools → Keyword Research (exact Bing volumes, free)
 
-**Что даёт:** точные (не корзины) объёмы поиска Bing, связанные ключи. Bing — 3–8 % рынка, но
-пропорции между фразами те же, а на длинном хвосте данные не склеиваются, как в Google.
-Хороший второй голос; основной — если Google Ads не настроен.
+**What it gives:** exact (not bucketed) Bing search volumes, related keywords. Bing is 3–8 % of the market, but
+the proportions between phrases are the same, and in the long tail the data is not merged as in Google.
+A good second voice; the primary one if Google Ads is not configured.
 
-**Шаги:**
+**Steps:**
 
-1. https://www.bing.com/webmasters → войти Microsoft-аккаунтом.
-2. **Добавить и верифицировать любой свой сайт** (нужен один домен; верификация — XML-файл,
-   meta-тег или DNS-запись). Без верифицированного сайта API-ключ не выдаётся [~].
-3. Settings → **API access** → сгенерировать API key.
-4. Переменные:
+1. https://www.bing.com/webmasters → sign in with a Microsoft account.
+2. **Add and verify any site of yours** (one domain is needed; verification is an XML file,
+   a meta tag, or a DNS record). Without a verified site no API key is issued [~].
+3. Settings → **API access** → generate an API key.
+4. Variables:
    ```
    BING_WEBMASTER_API_KEY=...
-   BING_WEBMASTER_SITE_URL=https://ваш-домен.tld
+   BING_WEBMASTER_SITE_URL=https://your-domain.tld
    ```
-5. Проверка: `python3 -B scripts/demand.py doctor` (блок `bing`: `"available": true`). Стадия `measure` вызывает
-   `GetKeyword` / `GetRelatedKeywords` через REST (`https://ssl.bing.com/webmaster/api.svc/json/`)
-   [~]. Legacy SOAP/POX отключён с 31.08.2026 — использовать только JSON/REST.
+5. Check: `python3 -B scripts/demand.py doctor` (the `bing` block: `"available": true`). The `measure` stage calls
+   `GetKeyword` / `GetRelatedKeywords` over REST (`https://ssl.bing.com/webmaster/api.svc/json/`)
+   [~]. The legacy SOAP/POX was switched off on 31.08.2026 — use JSON/REST only.
 
-**Квота:** официально не публикуется; практически — сотни вызовов в день без проблем [?].
-Документация: https://learn.microsoft.com/en-us/bingwebmaster/
-
----
-
-## 6. Upwork MCP (кто-то платит человеку за эту задачу)
-
-**Что даёт [✓]:** `find_jobs` возвращает заказы с бюджетом (fixed) или ставкой (hourly),
-`proposals_tier` (число откликов: «Fewer than 5» … «50+»), по клиенту — `total_spent`,
-`total_posted_jobs`, рейтинг; навыки, длительность. Это самый прямой наблюдаемый сигнал
-готовности платить и повторяемости.
-
-**Подключение:** коннектор Upwork в claude.ai (Settings → Connectors → Upwork, OAuth 2.1).
-Уже подключён к этой сессии. Нужен аккаунт Upwork (фрилансерский профиль подходит).
-
-**Переменная:** `UPWORK_ORG_UID=<org_uid из list_accounts>` — идентификатор аккаунта (не секрет), чтобы мост
-подставлял его в запросы сам. Узнать: вызвать `mcp__Upwork__upwork__list_accounts` в сессии.
-
-**Как использовать в пайплайне:** только через MCP-мост, фильтр по `title` (не `query` — он
-делает семантическое расширение и шумит), `job_type: fixed`, `budget_min` из конфига,
-`sort: recency`, окно 90 дней. Скрипт считает число заказов и медиану бюджета.
-
-**Ограничения:** прямой GraphQL API — по заявке, «personal use», низкая доля одобрений [~];
-скрейпинг запрещён ToS. Через MCP — умеренные объёмы (десятки вызовов в прогон), это исследование,
-не массовая выгрузка.
-
-**Дублёр без ключа [✓]:** Freelancer.com —
-`GET https://www.freelancer.com/api/projects/0.1/projects/active/?query=<фраза>&limit=50&job_details=true&compact=true`
-отдаёт бюджеты и `bid_stats` без авторизации. Шумнее и дешевле по бюджетам; используется как
-второй голос. Переменных не нужно.
-
-**Contra MCP** — уже подключён; `list_job_feed`, `list_services` дают цены productized-услуг.
-Маленький рынок, дополнительный источник.
+**Quota:** not officially published; practically — hundreds of calls per day without problems [?].
+Documentation: https://learn.microsoft.com/en-us/bingwebmaster/
 
 ---
 
-## 7. Маркетплейсы (платят ли за софт, сколько конкурентов) — без ключей
+## 6. Upwork MCP (someone pays a person for this job)
 
-Все эндпоинты отвечают без авторизации [✓]:
+**What it gives [✓]:** `find_jobs` returns jobs with a budget (fixed) or a rate (hourly),
+`proposals_tier` (the number of proposals: "Fewer than 5" … "50+"), and per client — `total_spent`,
+`total_posted_jobs`, rating; skills, duration. This is the most direct observable signal of
+willingness to pay and recurrence.
 
-| Маркетплейс | Вызов | Поля |
+**Connection:** the Upwork connector in claude.ai (Settings → Connectors → Upwork, OAuth 2.1).
+Already connected to this session. An Upwork account is needed (a freelancer profile works).
+
+**Variable:** `UPWORK_ORG_UID=<org_uid from list_accounts>` — the account identifier (not a secret), so the bridge
+substitutes it into requests itself. To learn it: call `mcp__Upwork__upwork__list_accounts` in the session.
+
+**How to use it in the pipeline:** only through the MCP bridge, filter by `title` (not `query` — it
+performs semantic expansion and adds noise), `job_type: fixed`, `budget_min` from the config,
+`sort: recency`, a 90-day window. The script counts the jobs and the median budget.
+
+**Limitations:** the direct GraphQL API is by application, "personal use", a low approval rate [~];
+scraping is forbidden by ToS. Through MCP — moderate volumes (dozens of calls per run); this is research,
+not bulk export.
+
+**Keyless backup [✓]:** Freelancer.com —
+`GET https://www.freelancer.com/api/projects/0.1/projects/active/?query=<phrase>&limit=50&job_details=true&compact=true`
+returns budgets and `bid_stats` without authorization. Noisier and cheaper on budgets; used as
+a second voice. No variables needed.
+
+**Contra MCP** — already connected; `list_job_feed`, `list_services` give productized-service prices.
+A small market, an additional source.
+
+---
+
+## 7. Marketplaces (does anyone pay for software, how many competitors) — no keys
+
+All endpoints respond without authorization [✓]:
+
+| Marketplace | Call | Fields |
 |---|---|---|
-| Apify Store | `GET https://api.apify.com/v2/store?search=<фраза>&limit=50` | `stats.totalUsers`, `totalUsers30Days`, `totalRuns`, `pricingInfos` |
-| WordPress.org | `GET https://api.wordpress.org/plugins/info/1.2/?action=query_plugins&request[search]=<фраза>&request[per_page]=50` | `active_installs`, `downloaded`, `rating`, `num_ratings`, `last_updated` |
-| Atlassian | `GET https://marketplace.atlassian.com/rest/2/addons?text=<фраза>&hosting=cloud` | `distribution.totalInstalls`, `reviews.count`, цена |
-| VS Code | `POST https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery` (JSON-тело с `filters`) | `statistics.install` — эндпоинт недокументирован |
-| Obsidian | `GET https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/community-plugin-stats.json` | загрузки по версиям, все плагины одним файлом |
-| Chrome Web Store | HTML страницы расширения, `grep -oE '[0-9,]+ users'` | число пользователей; поиск даёт ~10 результатов без пагинации |
-| Shopify App Store | `https://apps.shopify.com/search?q=<фраза>` | рейтинг и число отзывов; установок не публикует |
-| Smithery (MCP-реестр) | `GET https://registry.smithery.ai/servers?q=<фраза>` | `useCount`, `verified` |
+| Apify Store | `GET https://api.apify.com/v2/store?search=<phrase>&limit=50` | `stats.totalUsers`, `totalUsers30Days`, `totalRuns`, `pricingInfos` |
+| WordPress.org | `GET https://api.wordpress.org/plugins/info/1.2/?action=query_plugins&request[search]=<phrase>&request[per_page]=50` | `active_installs`, `downloaded`, `rating`, `num_ratings`, `last_updated` |
+| Atlassian | `GET https://marketplace.atlassian.com/rest/2/addons?text=<phrase>&hosting=cloud` | `distribution.totalInstalls`, `reviews.count`, price |
+| VS Code | `POST https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery` (a JSON body with `filters`) | `statistics.install` — the endpoint is undocumented |
+| Obsidian | `GET https://raw.githubusercontent.com/obsidianmd/obsidian-releases/HEAD/community-plugin-stats.json` | downloads per version, all plugins in one file |
+| Chrome Web Store | the extension page HTML, `grep -oE '[0-9,]+ users'` | the number of users; search returns ~10 results without pagination |
+| Shopify App Store | `https://apps.shopify.com/search?q=<phrase>` | rating and review count; it does not publish installs |
+| Smithery (the MCP registry) | `GET https://registry.smithery.ai/servers?q=<phrase>` | `useCount`, `verified` |
 
-`APIFY_TOKEN` не нужен для чтения Store; если появится — можно поднять лимиты [~].
-Ловушка везде: установки — сигнал **удовлетворённого** спроса. Гэп = много подсказок в
-autocomplete + мало, старые или низкорейтинговые результаты в маркетплейсе.
-
----
-
-## 8. Hacker News Algolia (голос практиков) — без ключа
-
-`GET https://hn.algolia.com/api/v1/search?query=<фраза>&tags=comment&hitsPerPage=100&numericFilters=created_at_i><unix>`
-[✓]. ~10 000 запросов в час на IP, до 1 000 результатов на запрос. Шаблоны запросов:
-`"is there a tool" <тема>`, `"I would pay for" <тема>`, `"Ask HN: what do you use for"`,
-`"Show HN" alternative to <X>`. Уже используется в `scripts/sources.py`.
+`APIFY_TOKEN` is not needed for reading the Store; if one appears — limits can be raised [~].
+The trap everywhere: installs are a signal of **satisfied** demand. A gap = many suggestions in
+autocomplete + few, old, or low-rated results in the marketplace.
 
 ---
 
-## 9. GitHub (незакрытые фичи в популярном OSS)
+## 8. Hacker News Algolia (the practitioners' voice) — no key
+
+`GET https://hn.algolia.com/api/v1/search?query=<phrase>&tags=comment&hitsPerPage=100&numericFilters=created_at_i><unix>`
+[✓]. ~10,000 queries per hour per IP, up to 1,000 results per query. Query patterns:
+`"is there a tool" <topic>`, `"I would pay for" <topic>`, `"Ask HN: what do you use for"`,
+`"Show HN" alternative to <X>`. Already used in `scripts/sources.py`.
+
+---
+
+## 9. GitHub (unmet feature requests in popular OSS)
 
 `GET https://api.github.com/search/issues?q=repo:<owner>/<repo> is:issue is:open "feature request"&sort=reactions-%2B1&order=desc`.
-Без токена — 10 запросов в минуту и часто 403 из датацентра [✓ наблюдалось в прогонах]; с токеном —
-30 в минуту.
+Without a token — 10 queries per minute and often 403 from a datacenter [✓ observed in runs]; with a token —
+30 per minute.
 
-1. https://github.com/settings/tokens → Fine-grained token, только public repositories, без
-   дополнительных прав.
+1. https://github.com/settings/tokens → a Fine-grained token, public repositories only, no
+   extra permissions.
 2. `GITHUB_TOKEN=github_pat_...`
 
-Плюс без ключа: `https://api.npmjs.org/downloads/point/last-month/<пакет>` — масштаб экосистемы [✓].
+Plus, without a key: `https://api.npmjs.org/downloads/point/last-month/<package>` — the ecosystem's scale [✓].
 
 ---
 
-## 10. Триггеры: закупки и регуляторика — без ключей
+## 10. Triggers: procurement and regulation — no keys
 
-| Источник | Вызов | Что даёт |
+| Source | Call | What it gives |
 |---|---|---|
-| TED (EU-закупки) | `POST https://api.ted.europa.eu/v3/notices/search`, expert-запрос `FT~"<фраза>" AND PD>=20260101` | бюджеты и повторяемость контрактов; уже в `scripts/sources.py` [✓] |
-| Federal Register | `GET https://www.federalregister.gov/api/v1/documents.json?conditions[term]=<фраза>` | регуляторные документы США с датами [✓] |
-| endoflife.date | `GET https://endoflife.date/api/v1/products/<продукт>` | даты окончания поддержки — волны «migrate / alternative» [✓] |
-| SAM.gov (опционально) | ключ бесплатный, 10 запросов в день на личном аккаунте [~] | закупки США; низкий приоритет |
+| TED (EU procurement) | `POST https://api.ted.europa.eu/v3/notices/search`, an expert query `FT~"<phrase>" AND PD>=20260101` | budgets and contract recurrence; already in `scripts/sources.py` [✓] |
+| Federal Register | `GET https://www.federalregister.gov/api/v1/documents.json?conditions[term]=<phrase>` | US regulatory documents with dates [✓] |
+| endoflife.date | `GET https://endoflife.date/api/v1/products/<product>` | end-of-support dates — waves of "migrate / alternative" [✓] |
+| SAM.gov (optional) | a free key, 10 queries per day on a personal account [~] | US procurement; low priority |
 
 ---
 
-## 11. Что сознательно не подключаем сейчас
+## 11. What we deliberately do not connect now
 
-- **Reddit** — с июня 2026 обязательное одобрение доступа, очередь 2–4 недели, коммерческое
-  использование по договору [~]. Место в стадии «отсев» зарезервировано; когда одобрят —
-  `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, PRAW, 100 запросов в минуту.
-- **G2 / Capterra / AlternativeTo** — только скрейп через анти-бот; нарушает правило
-  «без скрейпинга поисковиков и защищённых страниц».
-- **Google Trends** — официальный API в закрытой альфе, `pytrends` архивирован; форки
-  ловят 429. Тренд берём из помесячного ряда Keyword Planner.
-- **Semrush / Ahrefs** — MCP только на платных планах от $129–199 в месяц.
-- **Serper.dev** — 2 500 бесплатных SERP-запросов (показывают рекламные блоки Google, чего
-  Brave не даёт). Опция: `SERPER_API_KEY=...`, провайдер `serper` в `screen.serp.provider`.
-  Не обязателен.
-- **Keywords Everywhere** (~$84/год) и **DataForSEO** (депозит $50) — платные замены Google
-  Ads API, если настройка Google не удастся. В конфиге как провайдеры `keywords_everywhere`,
-  `dataforseo`, выключены.
+- **Reddit** — since June 2026 access approval is mandatory, the queue is 2–4 weeks, commercial
+  use under contract [~]. Its place at the screening stage is reserved; once approved —
+  `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, PRAW, 100 queries per minute.
+- **G2 / Capterra / AlternativeTo** — only scraping through an anti-bot; it violates the rule
+  "no scraping of search engines and protected pages".
+- **Google Trends** — the official API is in closed alpha, `pytrends` is archived; forks
+  catch 429s. The trend is taken from the Keyword Planner monthly series.
+- **Semrush / Ahrefs** — MCP only on paid plans from $129–199 per month.
+- **Serper.dev** — 2,500 free SERP queries (they show Google ad blocks, which
+  Brave does not). An option: `SERPER_API_KEY=...`, provider `serper` in `screen.serp.provider`.
+  Not required.
+- **Keywords Everywhere** (~$84/yr) and **DataForSEO** (a $50 deposit) — paid replacements for the Google
+  Ads API if the Google setup fails. In the config as providers `keywords_everywhere`,
+  `dataforseo`, disabled.
 
 ---
 
-## 12. Домены для сетевой политики облачной среды
+## 12. Domains for the cloud environment's network policy
 
-В claude.ai/code → Environments → Network: **Custom** → добавить:
+In claude.ai/code → Environments → Network: **Custom** → add:
 
 ```
 api.deepseek.com
@@ -366,19 +365,19 @@ ssl.bing.com
 google.serper.dev
 ```
 
-Последние четыре нужны только при настроенных Google Ads, Bing и Serper. MCP-серверы
-(Ubersuggest, Upwork, Contra) идут через коннекторы claude.ai и в этот список не входят.
+The last four are needed only with Google Ads, Bing, and Serper configured. MCP servers
+(Ubersuggest, Upwork, Contra) go through claude.ai connectors and are not part of this list.
 
 ---
 
-## 13. Порядок подключения (рекомендуемый)
+## 13. Connection order (recommended)
 
-1. Ничего не делать — стадии «разворот», «отсев» (маркетплейсы, Brave, Freelancer, HN) и
-   MCP-мост работают на том, что уже есть. Первый прогон возможен сразу; цифры — только через
-   3 отчёта Ubersuggest в день.
-2. Один вечер — **Google Ads API** (раздел 4). Снимает ограничение в 3 кластера в день.
-3. Пятнадцать минут — **Bing Webmaster** (раздел 5), если есть свой домен.
-4. Две минуты — **GitHub token** (раздел 9).
-5. Когда одобрят — Reddit.
+1. Do nothing — the expand and screen stages (marketplaces, Brave, Freelancer, HN) and
+   the MCP bridge work with what already exists. The first run is possible right away; numbers — only through
+   3 Ubersuggest reports per day.
+2. One evening — the **Google Ads API** (section 4). It removes the 3-clusters-per-day limit.
+3. Fifteen minutes — **Bing Webmaster** (section 5), if you have your own domain.
+4. Two minutes — a **GitHub token** (section 9).
+5. When approved — Reddit.
 
-После каждого шага: `python3 scripts/demand.py doctor`.
+After each step: `python3 scripts/demand.py doctor`.

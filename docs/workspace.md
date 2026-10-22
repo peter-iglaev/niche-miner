@@ -1,55 +1,55 @@
-# Публичный код и приватные данные
+# Public code and private data
 
-Приложение открытое, а данные владельца — нет. Профиль основателя, прогоны, бэклог кластеров,
-журнал и дашборды лежат в отдельном **приватном репозитории данных**. Код видит их по обычным
-путям (`runs/`, `backlog/`, `config/founder-profile.yaml`) через симлинки, поэтому ни один скрипт
-не знает о разделении.
+The application is open; the owner's data is not. The founder profile, runs, the cluster backlog,
+the journal, and dashboards live in a separate **private data repository**. The code sees them through ordinary
+paths (`runs/`, `backlog/`, `config/founder-profile.yaml`) via symlinks, so no script
+knows about the split.
 
-## Что считается приватным
+## What counts as private
 
-Список в [`.private-paths`](../.private-paths). В публичном репозитории эти пути записаны в
-`.gitignore`, `workspace.py export` не переносит их в публичный снимок, а pre-commit хук отклоняет
-коммит, который их всё-таки содержит.
+The list is in [`.private-paths`](../.private-paths). In the public repository these paths are written into
+`.gitignore`, `workspace.py export` does not carry them into the public snapshot, and the pre-commit hook rejects
+a commit that contains them anyway.
 
-| Путь | Что там |
+| Path | What is there |
 |---|---|
-| `config/founder-profile.yaml` | опыт, контакты, бюджет, география, отношение к продажам |
-| `runs/` | прогоны целиком: сырые ответы источников, отчёты, решения |
-| `backlog/` | бэклог кластеров и квоты между прогонами |
-| `reports/`, `tasks/*-<дата>-*`, `tasks/standing-objective.md` | задания и отчёты конкретных прогонов |
-| `docs/journal.md`, `docs/demand-dashboard.html`, `docs/pipeline-map.html`, `docs/snapshots/` | журнал и страницы, собранные из прогонов |
-| `.privacy-denylist` | ваши идентификаторы для проверки (см. ниже) |
+| `config/founder-profile.yaml` | experience, contacts, budget, geography, attitude to sales |
+| `runs/` | whole runs: raw source responses, reports, decisions |
+| `backlog/` | the cluster backlog and quotas between runs |
+| `reports/`, `tasks/*-<date>-*`, `tasks/standing-objective.md` | assignments and reports of specific runs |
+| `docs/journal.md`, `docs/demand-dashboard.html`, `docs/pipeline-map.html`, `docs/snapshots/` | the journal and pages assembled from runs |
+| `.privacy-denylist` | your identifiers for checking (see below) |
 
-Ключи API в git не попадают совсем: они в переменных окружения или в `.env.local`.
+API keys never reach git: they live in environment variables or in `.env.local`.
 
-## Облачная сессия Claude Code: настроить один раз
+## Claude Code cloud session: configure once
 
-1. **Environment → Environment variables** (claude.ai/code → Environments → ваша среда). Там уже лежат
-   `DEEPSEEK_API_KEY`, `BRAVE_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`. Добавьте:
+1. **Environment → Environment variables** (claude.ai/code → Environments → your environment). It already holds
+   `DEEPSEEK_API_KEY`, `BRAVE_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`. Add:
    ```
-   NICHE_MINER_DATA=/home/user/<имя-репозитория-данных>
+   NICHE_MINER_DATA=/home/user/<data-repo-name>
    ```
-   Облачная сессия кладёт каждый выбранный репозиторий в `/home/user/<имя>`. Путь можно проверить
-   командой `ls /home/user` в сессии.
-2. **При старте сессии** выберите оба репозитория: публичный код и приватные данные.
-3. SessionStart-хук (`scripts/install_pkgs.sh`) сам ставит зависимости, включает pre-commit
-   проверку (`git config core.hooksPath scripts/githooks`) и делает `workspace.py link`.
+   The cloud session places each selected repository in `/home/user/<name>`. You can check the path
+   with `ls /home/user` in the session.
+2. **At session start** select both repositories: the public code and the private data.
+3. The SessionStart hook (`scripts/install_pkgs.sh`) installs dependencies itself, enables the pre-commit
+   check (`git config core.hooksPath scripts/githooks`), and runs `workspace.py link`.
 
-Дальше всё как раньше: `/research <цель>`. Профиль берётся из репозитория данных, ключи из среды.
-Артефакты прогона физически пишутся в репозиторий данных, там же их и коммитят:
-
-```
-git -C "$NICHE_MINER_DATA" add -A && git -C "$NICHE_MINER_DATA" commit -m "Прогон <id>" && git -C "$NICHE_MINER_DATA" push
-```
-
-Правки кода коммитятся в публичный репозиторий как обычно; данные туда не попадут, потому что
-для него они игнорируемые симлинки.
-
-## Локально
+After that everything is as before: `/research <objective>`. The profile comes from the data repository, the keys from the environment.
+Run artifacts are physically written to the data repository and committed there:
 
 ```
-git clone <публичный-репозиторий> niche-miner
-git clone <репозиторий-данных> niche-miner-data
+git -C "$NICHE_MINER_DATA" add -A && git -C "$NICHE_MINER_DATA" commit -m "Run <id>" && git -C "$NICHE_MINER_DATA" push
+```
+
+Code changes are committed to the public repository as usual; the data never gets there, because
+for it those are ignored symlinks.
+
+## Locally
+
+```
+git clone <public-repository> niche-miner
+git clone <data-repository> niche-miner-data
 cd niche-miner
 echo "NICHE_MINER_DATA=../niche-miner-data" >> .env.local
 git config core.hooksPath scripts/githooks
@@ -57,48 +57,48 @@ python3 scripts/workspace.py link
 python3 scripts/workspace.py status
 ```
 
-Без репозитория данных приложение тоже работает: скопируйте
-`config/founder-profile.example.yaml` в `config/founder-profile.yaml`, и прогоны будут
-складываться в локальный игнорируемый `runs/`.
+Without a data repository the application still works: copy
+`config/founder-profile.example.yaml` to `config/founder-profile.yaml`, and runs will
+land in the local ignored `runs/`.
 
-## Команды `scripts/workspace.py`
+## `scripts/workspace.py` commands
 
-| Команда | Что делает |
+| Command | What it does |
 |---|---|
-| `status` | где данные, в каком режиме репозиторий, что слинковано |
-| `link [--dry-run]` | симлинки из `NICHE_MINER_DATA`; отсутствующие каталоги создаёт в данных; локальные данные не трогает (`conflict`) |
-| `check [--staged]` | приватные пути, форматы ключей, значения секретных переменных окружения, записи `.privacy-denylist` |
-| `export --out DIR [--commit --author "Имя <id+user@users.noreply.github.com>"]` | чистый публичный снимок одним коммитом |
+| `status` | where the data is, which mode the repository is in, what is linked |
+| `link [--dry-run]` | symlinks from `NICHE_MINER_DATA`; missing directories are created in the data repo; local data is untouched (`conflict`) |
+| `check [--staged]` | private paths, key formats, secret environment variable values, `.privacy-denylist` entries |
+| `export --out DIR [--commit --author "Name <id+user@users.noreply.github.com>"]` | a clean public snapshot in one commit |
 
-**`.privacy-denylist`**: одна строка — одна запись (без учёта регистра), префикс `re:` для
-регулярного выражения. Сюда идут фамилия, ник, email, `chat_id`, работодатели. Файл приватный:
-он живёт в репозитории данных и линкуется, как профиль. Для облака записи можно передать и
-переменной `NICHE_MINER_DENYLIST` через `;`.
+**`.privacy-denylist`**: one line — one entry (case-insensitive), the `re:` prefix for
+a regular expression. This holds the surname, nickname, email, `chat_id`, employers. The file is private:
+it lives in the data repository and is linked like the profile. For the cloud, entries can also be passed
+via the `NICHE_MINER_DENYLIST` variable, separated by `;`.
 
-Проверка сообщает файл, строку и правило, но никогда не само совпавшее значение. Строку с
-заведомо фиктивным значением (тестовая фикстура) можно пометить комментарием `privacy-check: allow`.
+The check reports the file, line, and rule, but never the matched value itself. A line with
+an obviously dummy value (a test fixture) can be marked with a `privacy-check: allow` comment.
 
-**Режимы.** Репозиторий считается публичным, если его `.gitignore` игнорирует `runs`. Там
-приватный путь в коммите — ошибка. В старом репозитории «всё в одном» приватные пути
-закоммичены намеренно: `check` их пропускает и сканирует только файлы приложения.
+**Modes.** A repository is considered public if its `.gitignore` ignores `runs`. There,
+a private path in a commit is an error. In the old "everything in one" repository, private paths
+were committed intentionally: `check` skips them and scans only application files.
 
-## Первая публикация
+## First publication
 
-1. `python3 scripts/workspace.py export --out ../niche-miner-public`. Экспорт копирует файлы из git,
-   дописывает `.gitignore`, делает `git init` и прогоняет `check`.
-2. Просмотрите снимок: `git -C ../niche-miner-public status`, README, примеры конфигов.
-3. `export … --commit --author "Имя <id+user@users.noreply.github.com>"`. Коммит будет один:
-   история старого репозитория с прогонами и профилем в публичный не переходит.
-4. Создайте на GitHub пустой репозиторий, сначала **приватный**, запушьте туда снимок, проверьте
-   его ещё раз и только потом переключите видимость на Public.
+1. `python3 scripts/workspace.py export --out ../niche-miner-public`. The export copies files from git,
+   appends `.gitignore`, runs `git init`, and runs `check`.
+2. Review the snapshot: `git -C ../niche-miner-public status`, the README, config examples.
+3. `export … --commit --author "Name <id+user@users.noreply.github.com>"`. There will be one commit:
+   the history of the old repository with runs and the profile does not pass into the public one.
+4. Create an empty repository on GitHub, **private** first, push the snapshot there, check
+   it once more, and only then switch visibility to Public.
 
-**Репозиторий данных.** Старый репозиторий уже устроен как репозиторий данных: те же пути в тех
-же местах. Его можно оставить приватным и указать в `NICHE_MINER_DATA` как есть. Код в нём просто
-перестаёт использоваться; удалить его можно отдельным коммитом, когда новая схема обкатается.
+**The data repository.** The old repository is already structured as a data repository: the same paths in the same
+places. It can stay private and be referenced in `NICHE_MINER_DATA` as is. The code in it simply
+stops being used; it can be removed with a separate commit once the new scheme settles in.
 
 ## Telegram
 
-Ответ Bot API архивируется в `runs/<id>/sources/` без объектов `chat` и `from`: прогон фиксирует,
-что сообщение ушло, но не чей аккаунт его получил. В метаданных источника это отмечено
-(`limitations`), потому что архив хранит отредактированный ответ, а не исходные байты.
-Прогоны до этой правки такие объекты содержат, поэтому они и остаются в приватном репозитории.
+The Bot API response is archived into `runs/<id>/sources/` without the `chat` and `from` objects: the run records
+that a message was sent, but not whose account received it. This is noted in the source metadata
+(`limitations`), because the archive stores a redacted response, not the original bytes.
+Runs made before this change do contain those objects, which is why they stay in the private repository.

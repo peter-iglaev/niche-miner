@@ -1,110 +1,110 @@
 # Money-First Niche Miner
 
-Приложение для поиска ниш **от наблюдаемого спроса**: что люди печатают в поиск, за что платят
-исполнителям, что покупают в маркетплейсах, кто занимает выдачу — и только потом интерпретация,
-проверка и решение на дешёвых моделях (DeepSeek). Оркестрация — из облачной сессии Claude Code
-командой `/research`, отчёт — PDF в Telegram.
+An application for finding niches **from observed demand**: what people type into search, what
+they pay freelancers for, what they buy on marketplaces, who occupies the results — and only then
+interpretation, verification, and decisions on cheap models (DeepSeek). Orchestration comes from a
+Claude Code cloud session with the `/research` command; the report is a PDF delivered to Telegram.
 
-## Пайплайн v2 (текущий)
+## Pipeline v2 (current)
 
-Семь стадий, каждая — своя папка `runs/<id>/<n>-<стадия>/` с `summary.json`:
+Seven stages, each its own `runs/<id>/<n>-<stage>/` folder with a `summary.json`:
 
-| # | Стадия | Что делает | Модель |
+| # | Stage | What it does | Model |
 |---|---|---|---|
-| 1 | разворот | seed-фразы → сотни реальных формулировок (autocomplete, три оператора узких ниш) | нет |
-| 2 | кластеры | фразы → задачи покупателя | deepseek-chat |
-| 3 | отсев | платят ли людям (Upwork/Freelancer), платят ли за софт (маркетплейсы), проходима ли выдача (Brave) | нет |
-| 4 | цифры | объём, CPC, тренд (Google Ads Keyword Planner / Bing / Ubersuggest через MCP-мост) | нет |
-| 5 | гейты | числовые пороги (откалиброваны на контроле) и режим CPC (`self_serve` / `services` / `any`) | нет |
-| 6 | проверка | interpret → skeptic → judge, чистый контекст на роль | deepseek-chat / deepseek-v4-pro |
-| 7 | отчёт | карточки кластеров, черновик нарратива, PDF, Telegram | deepseek-chat (черновик) |
+| 1 | expand | seed phrases → hundreds of real phrasings (autocomplete, three narrow-niche operators) | none |
+| 2 | clusters | phrases → buyer jobs | deepseek-chat |
+| 3 | screen | do people pay freelancers (Upwork/Freelancer), do they pay for software (marketplaces), is the SERP passable (Brave) | none |
+| 4 | measure | volume, CPC, trend (Google Ads Keyword Planner / Bing / Ubersuggest via the MCP bridge) | none |
+| 5 | gates | numeric thresholds (calibrated on the control set) and CPC mode (`self_serve` / `services` / `any`) | none |
+| 6 | review | interpret → skeptic → judge, fresh context per role | deepseek-chat / deepseek-v4-pro |
+| 7 | report | cluster cards, narrative draft, PDF, Telegram | deepseek-chat (draft) |
 
-- Конфиг: [`config/demand.yaml`](config/demand.yaml) — темы, режим, пороги, модели, уведомления.
-- Калибровка порогов: [`docs/calibration.md`](docs/calibration.md), `python3 -B scripts/calibrate.py --run calib-<дата>`.
-  Пороги проверяются на выборке ниш с известным ответом; ноль кандидатов доказателен только
-  после того, как контроль проходит.
-- Точка входа: `python3 scripts/demand.py` (`doctor`, `create`, `auto`, `bridge`, `decide`, `report`, …).
-- Спецификация: [`docs/demand-first-spec.md`](docs/demand-first-spec.md); подключение источников:
-  [`docs/sources-setup.md`](docs/sources-setup.md); порядок для оркестратора: [`.claude/commands/research.md`](.claude/commands/research.md).
-- Дашборд: `docs/demand-dashboard.html` (`python3 scripts/demand.py dashboard`).
-- Бэклог кластеров между прогонами: `backlog/clusters.jsonl`.
-- Журнал прогонов и правок: `docs/journal.md` — какой прогон вскрыл какой дефект
-  и что из-за этого изменилось. Машинный след: `runs/<id>/events.jsonl` и `manifest.json`.
-- Прогоны, бэклог, журнал, дашборды и профиль основателя — данные владельца. Они живут в
-  приватном репозитории данных и линкуются в рабочую копию: [`docs/workspace.md`](docs/workspace.md).
-- Отчёт прогона лежит как `runs/<id>/report-<id>.pdf`: имя несёт тему и дату, потому что файл
-  уходит из прогона в Telegram и в загрузки.
+- Config: [`config/demand.yaml`](config/demand.yaml) — themes, mode, thresholds, models, notifications.
+- Threshold calibration: [`docs/calibration.md`](docs/calibration.md), `python3 -B scripts/calibrate.py --run calib-<date>`.
+  Thresholds are validated against a sample of niches with known answers; zero candidates is only
+  meaningful once the control set passes.
+- Entry point: `python3 scripts/demand.py` (`doctor`, `create`, `auto`, `bridge`, `decide`, `report`, …).
+- Specification: [`docs/demand-first-spec.md`](docs/demand-first-spec.md); source setup:
+  [`docs/sources-setup.md`](docs/sources-setup.md); orchestrator procedure: [`.claude/commands/research.md`](.claude/commands/research.md).
+- Dashboard: `docs/demand-dashboard.html` (`python3 scripts/demand.py dashboard`).
+- Cluster backlog between runs: `backlog/clusters.jsonl`.
+- Run and fix journal: `docs/journal.md` — which run exposed which defect
+  and what changed because of it. Machine trail: `runs/<id>/events.jsonl` and `manifest.json`.
+- Runs, backlog, journal, dashboards, and the founder profile are owner data. They live in
+  a private data repository and are linked into the working copy: [`docs/workspace.md`](docs/workspace.md).
+- A run report is stored as `runs/<id>/report-<id>.pdf`: the name carries the topic and date, because the file
+  travels out of the run to Telegram and to downloads.
 
-**MCP-мост.** Ubersuggest и Upwork доступны только внутри сессии Claude Code. Стадия пишет список вызовов в
-`runs/<id>/bridge/requests.jsonl`, оркестратор исполняет их и сохраняет ответы, `bridge --ingest` архивирует
-их в `sources/` с хэшами. Всё остальное скрипты вызывают сами.
+**MCP bridge.** Ubersuggest and Upwork are available only inside a Claude Code session. A stage writes the list of calls to
+`runs/<id>/bridge/requests.jsonl`, the orchestrator executes them and stores the responses, and `bridge --ingest` archives
+them into `sources/` with hashes. Everything else the scripts call themselves.
 
-## Быстрый старт
+## Quick start
 
-Сначала профиль основателя: скопируйте `config/founder-profile.example.yaml` в
-`config/founder-profile.yaml` или подключите приватный репозиторий данных
-(`python3 scripts/workspace.py link`, см. [`docs/workspace.md`](docs/workspace.md)).
+Start with the founder profile: copy `config/founder-profile.example.yaml` to
+`config/founder-profile.yaml` or link the private data repository
+(`python3 scripts/workspace.py link`, see [`docs/workspace.md`](docs/workspace.md)).
 
 ```
 python3 -B scripts/demand.py doctor
 python3 -B scripts/demand.py create --run demand-ecommerce-2026-09-20 --themes ecommerce-tech
-python3 -B scripts/demand.py auto --run demand-ecommerce-2026-09-20      # до первого моста
-python3 -B scripts/demand.py bridge --run demand-ecommerce-2026-09-20    # что исполнить в сессии
+python3 -B scripts/demand.py auto --run demand-ecommerce-2026-09-20      # up to the first bridge
+python3 -B scripts/demand.py bridge --run demand-ecommerce-2026-09-20    # what to execute in the session
 ```
 
-Дальше — `bridge --ingest`, снова `auto`, затем `decide --auto`, `report`, `narrative`, `pdf-review`, `finalize`, `deliver`.
+Then run `bridge --ingest`, `auto` again, then `decide --auto`, `report`, `narrative`, `pdf-review`, `finalize`, `deliver`.
 
 ---
 
-## Пайплайн v1 (предыдущий подход, сохранён ради истории прогонов)
+## Pipeline v1 (previous approach, kept for the history of runs)
 
-Приложение агентов для Codex: исследует конкретные рабочие задачи покупателей и связывает коммерческие выводы с проверяемыми доказательствами.
+An agent application for Codex: it researches concrete buyer workflows and ties commercial conclusions to verifiable evidence.
 
-**Сейчас выполняется разработка приложения. Рыночное исследование не запущено.** Для него нужен отдельный запрос пользователя.
+**The application itself is under development. Market research is not running.** That requires a separate user request.
 
-## Как устроена работа
+## How the work is organized
 
-Пользователь задаёт цель и её тип: `targeted` — проверить существующую гипотезу или обновить доказательства, `mining` — широкий поиск задач по отраслям. Тип указывается явно при создании прогона. Корневой Codex-агент планирует работу и делегирует задания реальным агентам через инструменты сотрудничества Codex; Python ведёт очередь, состояние, артефакты и проверки.
+The user sets an objective and its type: `targeted` — verify an existing hypothesis or refresh evidence, `mining` — a broad search for jobs across industries. The type is stated explicitly when a run is created. The root Codex agent plans the work and delegates assignments to real agents through the Codex collaboration tools; Python maintains the queue, state, artifacts, and checks.
 
-Объём и ограничения определяются запросом. Масштабная воронка рассчитана примерно на 300 дешёвых гипотез → 60 лёгких проверок → 15 серьёзных валидаций → 5 глубоких исследований; это бюджеты и ориентиры, а не обязательное число положительных результатов. Лёгкую проверку выполняет один экономичный агент, а строгая независимость включается для глубокого исследования, Skeptic и Judge. Провайдер и модель выбираются в `config/model-routing.yaml` на каждую роль. Анти-биас квоты портфеля применяются только к прогонам `mining`; в `targeted` аудит помечается как неоценённый и ничего не блокирует.
+Scale and limits come from the request. The scale funnel targets roughly 300 cheap hypotheses → 60 light validations → 15 serious validations → 5 deep investigations; these are budgets and landmarks, not required counts of positive results. A light validation is performed by a single economical agent, while strict independence is enabled for deep investigation, Skeptic, and Judge. Provider and model are chosen per role in `config/model-routing.yaml`. Portfolio anti-bias quotas apply only to `mining` runs; in `targeted` the audit is marked as not assessed and nothing is blocked.
 
-Роли исследования — восемь:
+The research roles are eight:
 
-- **Discovery** — находит конкретную задачу, покупателя, триггер и текущий обходной путь.
-- **Аспекты** — `demand`, `money`, `competition`, `distribution`, `feasibility`; у каждого отдельный результат.
-- **Skeptic** — независимо проверяет доказательства и ищет противоречия.
-- **Judge** — оценивает зафиксированные материалы и замечания Skeptic, не добавляя собственных рыночных фактов.
+- **Discovery** — finds the concrete job, buyer, trigger, and current workaround.
+- **Facets** — `demand`, `money`, `competition`, `distribution`, `feasibility`; each has its own result.
+- **Skeptic** — independently checks the evidence and looks for contradictions.
+- **Judge** — assesses the frozen record and Skeptic findings without adding market facts of its own.
 
-Корневой агент (Codex) — оркестратор, а не роль исследования: он назначает задания, запускает реальных агентов, принимает результаты и пишет отчёт.
+The root agent (Codex) is the orchestrator, not a research role: it assigns jobs, launches real agents, accepts results, and writes the report.
 
-Автор не проверяет собственную гипотезу. Рекомендация (`qualified`) требует принятых результатов `money`, `distribution`, `feasibility`, `skeptic` и `judge`; `demand` и `competition` обязательны только тогда, когда оценка на них ссылается.
+An author does not validate their own hypothesis. A recommendation (`qualified`) requires accepted `money`, `distribution`, `feasibility`, `skeptic`, and `judge` results; `demand` and `competition` are mandatory only when the assessment references them.
 
-## Доказательства и результат
+## Evidence and outcome
 
-Публичная цена не равна подтверждённой оплате. Независимое сочетание отчётов покупателей, расходов на персонал или аутсорсинг, платных конкурентов и повторяемости может подтвердить существующие расходы без invoice. Payment Confidence отражает уверенность в наличии денег вокруг workflow, а Transaction Evidence Strength — прямоту наблюдаемой конкретной транзакции.
+A public price is not confirmed payment. An independent combination of buyer reports, staffing or outsourcing spend, paid competitors, and recurrence can establish existing spend without an invoice. Payment Confidence reflects confidence that money exists around a workflow, while Transaction Evidence Strength records how directly a concrete transaction is observed.
 
-Investigation Priority определяет, кому дать следующий исследовательский бюджет, и допускает неизвестные distribution/feasibility. Commercial Qualification остаётся строгим допуском к market experiment/MVP. Неизвестные метрики остаются неизвестными; соответствие основателю не компенсирует провал обязательных условий. Профиль основателя проходит schema validation и различает подтверждённую знакомую, подтверждённую незнакомую, неизвестную и просто лежащую вне подтверждённого опыта отрасль.
+Investigation Priority determines who gets the next research budget and tolerates unknown distribution/feasibility. Commercial Qualification remains a strict gate to a market experiment/MVP. Unknown metrics stay unknown; founder fit does not compensate for failed mandatory conditions. The founder profile passes schema validation and distinguishes confirmed familiarity, confirmed unfamiliarity, unknown, and merely outside confirmed familiarity.
 
-Каждый запуск сохраняет цель, тип, условие остановки, авторов, frozen packets, попытки, утверждения и решения в `runs/<run-id>/`. Новый worker видит snapshot всех уже принятых claims и upstream outputs кандидата. Сырые источники хранятся byte-for-byte под `sources/` со стабильным `source_id`, MIME/расширением и SHA; временные пути не являются каноническими ссылками. Один semantic query с fallback по Brave/Tavily считается одним запросом, а provider attempts и классы ошибок учитываются отдельно.
+Each run stores the objective, type, stopping condition, authors, frozen packets, attempts, claims, and decisions in `runs/<run-id>/`. A new worker sees a snapshot of all already accepted claims and the candidate's upstream outputs. Raw sources are stored byte-for-byte under `sources/` with a stable `source_id`, MIME type/extension, and SHA; temporary paths are not canonical references. One semantic query with Brave/Tavily fallback counts as one query, while provider attempts and error classes are accounted separately.
 
-Технический источник остаётся в `report.md`, а основной пользовательский результат — русский `report.pdf` со встроенным кириллическим шрифтом. `finalize` проверяет Unicode, актуальность Markdown/PDF, SHA, отрендеренные PNG всех страниц и запись фактического визуального просмотра. Отсутствие рекомендованных кандидатов — допустимый результат. Финализация блокируется, если уже поставленное задание осталось `rejected` или `cancelled`: технический отказ нельзя выдать за отсутствие рыночных данных или спрятать внутри общего `deferred`.
+The technical record stays in `report.md`, and the primary user deliverable is the Russian `report.pdf` with an embedded Cyrillic font. `finalize` checks Unicode, Markdown/PDF freshness, hashes, rendered PNGs of every page, and the record of actual visual review. A run with no recommended candidates is a valid outcome. Finalization is blocked if a queued assignment remains `rejected` or `cancelled`: a technical refusal must not be passed off as a lack of market data or hidden inside a generic `deferred`.
 
-## Начало работы
+## Getting started
 
-Прочитайте [CODEX_TASK.md](CODEX_TASK.md), [AGENTS.md](AGENTS.md) и [архитектуру](docs/architecture.md). Зависимости закреплены в [requirements.txt](requirements.txt). Перед исследованием выполните `python3 -B scripts/preflight.py`; он проверяет схемы, запускает автономные тесты и синтетический прогон, но сам не запускает агентов или исследование.
+Read [CODEX_TASK.md](CODEX_TASK.md), [AGENTS.md](AGENTS.md), and the [architecture](docs/architecture.md). Dependencies are pinned in [requirements.txt](requirements.txt). Before research, run `python3 -B scripts/preflight.py`; it checks schemas, runs the offline tests and a synthetic run, but does not launch agents or research itself.
 
-Провайдер и модель каждой роли задаются в `config/model-routing.yaml` (`python3 scripts/routing.py show`),
-замораживаются в задании и сверяются с фактически использованной моделью при `bind`. Состояние прогонов,
-источники и модели видны на автономной странице `docs/pipeline-map.html`
-(`python3 scripts/pipeline_viewer.py --open`): что нашли, какой агент какой источник тянул и зачем,
-что осталось без ссылок.
+The provider and model for each role are set in `config/model-routing.yaml` (`python3 scripts/routing.py show`),
+frozen into the assignment, and cross-checked against the model actually used at `bind`. Run state,
+sources, and models are visible on the self-contained page `docs/pipeline-map.html`
+(`python3 scripts/pipeline_viewer.py --open`): what was found, which agent pulled which source and why,
+and what is left without references.
 
-Задания выполняет `scripts/worker.py`: он запускает роль на назначенной ей модели, собирает
-источники и пишет результат, а приёмку оставляет оркестратору. С телефона прогон запускается
-командой `/research` в облачной сессии Claude Code.
+Assignments are executed by `scripts/worker.py`: it runs the role on the model routed to it, collects
+sources, and writes the result, leaving acceptance to the orchestrator. From a phone, a run is started
+with `/research` in a Claude Code cloud session.
 
-Интерфейс локального приложения: `python3 scripts/app.py --help`. Его команды: `create-run`, `queue`, `bind`, `accept`, `next`, `status`, `decide`, `cancel`, `validate`, `report`, `pdf-review`, `finalize`. Root использует их совместно с реальными инструментами делегирования Codex (`spawn_agent`, `send_input`, `wait_agent`); запись в очереди сама по себе не означает запуск агента. Артефакты прогонов в публичный репозиторий не коммитятся: `runs/` — приватный путь (`.private-paths`), его содержимое хранится в репозитории данных.
+The local application interface: `python3 scripts/app.py --help`. Its commands: `create-run`, `queue`, `bind`, `accept`, `next`, `status`, `decide`, `cancel`, `validate`, `report`, `pdf-review`, `finalize`. Root uses them together with the real Codex delegation tools (`spawn_agent`, `send_input`, `wait_agent`); a queue entry by itself does not mean an agent was launched. Run artifacts are not committed to the public repository: `runs/` is a private path (`.private-paths`), its content is stored in the data repository.
 
-## Лицензия
+## License
 
 [Apache License 2.0](LICENSE).
